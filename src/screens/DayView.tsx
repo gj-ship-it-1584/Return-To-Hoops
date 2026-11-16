@@ -17,6 +17,7 @@ import { ReorderSheet } from '../components/ReorderSheet';
 import { applyOrder, setPlannedOrder } from '../lib/plans';
 import { saveSettings } from '../lib/store';
 import { AddToDaySheet, type DayAddition } from '../components/AddToDaySheet';
+import { TargetsCard } from '../components/TargetsCard';
 import { ACTIVITY_LABEL, logActivity, sessionBadge, sessionLabel } from '../lib/activities';
 import { addPlannedActivity, removePlannedActivity } from '../lib/plans';
 import { patch } from '../lib/store';
@@ -236,6 +237,8 @@ export default function DayView({ date }: { date: string }) {
           ) : null}
         </Card>
       ))}
+
+      <TargetsCard date={date} settings={settings} canLog={date <= today} showWeight={date <= today} />
 
       <Button kind="primary" className="mt-4 w-full" onClick={() => setSheet('add')}>+ Add to this day</Button>
       <p className="mt-2 px-2 text-center text-xs text-faint">An activity like basketball, a workout, or a single exercise. Search for anything.</p>

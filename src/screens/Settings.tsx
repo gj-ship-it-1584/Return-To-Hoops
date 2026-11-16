@@ -9,6 +9,7 @@ import { DAYS } from '../plan/days';
 import { exportBackup, parseBackup, restoreBackup, wipeLocal } from '../lib/backup';
 import { connect, disconnect, getLink, joinLink, newCode, parseConfig, pushAll, wipeRemote } from '../lib/sync';
 import { fromDisplay, toDisplay } from '../lib/units';
+import { targetsOf } from '../lib/targets';
 
 export default function SettingsScreen() {
   const s = useSettings();
@@ -75,6 +76,14 @@ export default function SettingsScreen() {
             <NumInput value={s.calories} onChange={(v) => v && set({ calories: v })} decimal={false} />
           </Field>
         </div>
+      </Card>
+
+      <SectionTitle>Daily targets</SectionTitle>
+      <Card className="space-y-2">
+        <Field label="Cardio (min / day)" hint="Dog walks, incline walks, bike, rower and basketball all count.">
+          <NumInput value={targetsOf(s).cardioMin} decimal={false} onChange={(v) => v && set({ targets: { ...targetsOf(s), cardioMin: v } })} />
+        </Field>
+        <p className="text-xs text-faint">Food, steps and sleep stay in Apple Health (your Oura ring). Web apps can't read Apple Health, so they aren't tracked here.</p>
       </Card>
 
       <SectionTitle>Units and timers</SectionTitle>

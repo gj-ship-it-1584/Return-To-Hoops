@@ -145,6 +145,8 @@ export interface Settings extends Base {
   standingReach?: number;
   bloodDraw?: string;
   goalWeight: number;
+  /** daily goals shown on Today and each day */
+  targets?: { cardioMin: number; protein: number; steps: number; sleep: number };
   /** your preferred exercise order for each training day (plan item keys) */
   dayOrder?: Record<string, string[]>;
   calories: number;

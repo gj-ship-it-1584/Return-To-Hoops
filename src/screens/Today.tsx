@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Button, Card, Pill, SectionTitle, Sheet } from '../components/ui';
+import { TargetsCard } from '../components/TargetsCard';
 import { BodySheet, CardioSheet, CheckinCard, DogWalkSheet, PickupSheet } from '../components/QuickForms';
 import { useActiveSession, useSessions, useSettings, useSyncStatus, useToday, go } from '../lib/hooks';
 import { currentStreak, planForDay, projectAgenda, weeklyCounts, type AgendaDay } from '../lib/schedule';
@@ -9,7 +10,7 @@ import { ACTIVITY_LABEL, logActivity, sessionLabel, sessionShort } from '../lib/
 import { removePlannedActivity } from '../lib/plans';
 import { addDays, diffDays, dowLetter, fmtDate, fmtDuration, weekday, dowName } from '../lib/dates';
 import { DAYS, DESK_RESET, LIFT_ORDER, type DayId } from '../plan/days';
-import { NUTRITION, SAFETY } from '../plan/content';
+import { SAFETY } from '../plan/content';
 import { db, type SessionType } from '../lib/db';
 import { jumpsInWeek, startSession, tendonFlag } from '../lib/workout';
 import { unlockAudio } from '../lib/alerts';
@@ -168,10 +169,7 @@ export default function Today() {
         </Card>
       ))}
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Button big onClick={() => setSheet('weight')}>Log weight</Button>
-        <Button big onClick={() => setSheet('dog')}>Log dog walk</Button>
-      </div>
+      <TargetsCard date={today} settings={settings} canLog />
 
       {/* alerts, one line each; tap for details */}
       {(plan.kind === 'bloodDraw' || halved || plan.testDay) && (
@@ -215,21 +213,6 @@ export default function Today() {
         )}
       </div>
 
-      <SectionTitle>Fuel</SectionTitle>
-      <Card>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <div className="text-xs text-muted">Calories</div>
-            <div className="tnum text-xl font-semibold">~{settings.calories.toLocaleString()}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted">Protein</div>
-            <div className="tnum text-xl font-semibold">{NUTRITION.protein[0]}–{NUTRITION.protein[1]} g</div>
-            <div className="text-xs text-faint">{NUTRITION.proteinNote}</div>
-          </div>
-        </div>
-        <p className="mt-3 text-sm text-muted">{NUTRITION.fiber} {NUTRITION.avoid}</p>
-      </Card>
 
       <SessionPicker
         open={sheet === 'pick'}
