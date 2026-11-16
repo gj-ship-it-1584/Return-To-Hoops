@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { encodeSetup, type SetupData } from '../src/lib/backup';
 
-const site = process.argv[2] ?? 'https://gj-ship-it-1584.github.io/Return-to-Hoops/';
+const site = process.argv[2] ?? 'https://gj-ship-it-1584.github.io/Return-To-Hoops/';
 const data = JSON.parse(readFileSync('personal/baseline.json', 'utf8')) as SetupData;
 const link = `${site}#setup=${encodeSetup(data)}`;
 writeFileSync('my-setup-link.txt', link + '\n');

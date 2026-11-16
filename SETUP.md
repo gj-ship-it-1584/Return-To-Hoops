@@ -12,7 +12,7 @@ Unlike Shea's Log, this app has a build step. You don't upload files by hand; Gi
 
 1. Sign in at <https://github.com> as **gj-ship-it-1584**.
 2. Click **+** (top right) → **New repository**.
-   - Name: `Return-to-Hoops`
+   - Name: `Return-To-Hoops`
    - **Public**
    - Do **not** tick "Add a README" (the repository must start empty).
    - Click **Create repository**.
@@ -20,7 +20,7 @@ Unlike Shea's Log, this app has a build step. You don't upload files by hand; Gi
 4. On the repository page, click **Settings** → **Pages** (left sidebar). Under **Build and deployment → Source**, choose **GitHub Actions**. You only do this once.
 5. Click the **Actions** tab. A run called "Deploy to GitHub Pages" builds the app, which takes about 2 minutes. When it shows a green check, the app is live at:
 
-   **https://gj-ship-it-1584.github.io/Return-to-Hoops/**
+   **https://gj-ship-it-1584.github.io/Return-To-Hoops/**
 
 To update the app later, say "push it" again. Your phone picks up the new version the next time you open the app.
 
