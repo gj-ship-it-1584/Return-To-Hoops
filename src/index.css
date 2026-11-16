@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0b0d12;
+  --color-card: #141821;
+  --color-card2: #1c2130;
+  --color-line: #262c3b;
+  --color-ink: #e8ebf1;
+  --color-muted: #9aa3b2;
+  --color-faint: #687184;
+  --color-accent: #ff7a1a;
+  --color-accent-ink: #1a0d02;
+  --color-good: #34c77b;
+  --color-warn: #f5c84c;
+  --color-bad: #ff5a5a;
+  --color-info: #5aa7ff;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
+}
+
+body {
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+}
+
+/* iPhone notch / home bar */
+.safe-top {
+  padding-top: max(env(safe-area-inset-top), 12px);
+}
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  color: inherit;
+}
+/* iOS zooms into inputs smaller than 16px */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.animate-pop {
+  animation: pop 0.45s ease-out both;
+}
+@keyframes flash {
+  0%, 100% { background: transparent; }
+  50% { background: rgba(255, 122, 26, 0.35); }
+}
+.animate-flash {
+  animation: flash 0.6s ease-in-out 4;
+}
+@keyframes rise {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+.animate-rise {
+  animation: rise 0.22s ease-out both;
+}

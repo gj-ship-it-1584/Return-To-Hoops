@@ -1,0 +1,8 @@
+node_modules
+dist
+*.local
+hoops-app-prompt.md
+my-setup-link.txt
+.DS_Store
+tsconfig.tsbuildinfo
+personal/
