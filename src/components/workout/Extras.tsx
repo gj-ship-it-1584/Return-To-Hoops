@@ -1,4 +1,4 @@
-/* Day D extras: test day card, dunk logger with the first-dunk celebration. */
+/* Court day extras: test day card, dunk logger with the first-dunk celebration. */
 import { useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Button, Card, NumInput, Segmented, toast } from '../ui';
@@ -48,11 +48,11 @@ export function TestCard({ session, reach }: { session: Session; reach?: number 
         <div className="mt-3 grid grid-cols-2 gap-2 text-center">
           <div className="rounded-xl bg-card2 p-2">
             <div className="text-xs text-muted">Standing vertical</div>
-            <div className="tnum text-xl font-bold">{reach && bs ? `${(bs - reach).toFixed(1)}″` : '—'}</div>
+            <div className="font-display text-[28px] leading-none">{reach && bs ? `${(bs - reach).toFixed(1)}″` : '—'}</div>
           </div>
           <div className="rounded-xl bg-card2 p-2">
             <div className="text-xs text-muted">Best approach touch</div>
-            <div className="tnum text-xl font-bold">{ba ? fmtFtIn(ba) : '—'}</div>
+            <div className="font-display text-[28px] leading-none">{ba ? fmtFtIn(ba) : '—'}</div>
           </div>
         </div>
       )}

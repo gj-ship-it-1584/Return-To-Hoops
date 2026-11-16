@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { currentStreak, nextLift, planForDay, programPosition, weeklyCounts, type SessionLite } from './schedule';
+import { currentStreak, nextLift, planForDay, programPosition, projectAgenda, weeklyCounts, type SessionLite } from './schedule';
 import { progressionHint, epley } from './progression';
 import { DAYS } from '../plan/days';
 import type { Exercise } from '../plan/types';
@@ -149,5 +149,53 @@ describe('progression', () => {
   it('estimates 1RM with Epley', () => {
     expect(epley(200, 5)).toBeCloseTo(233.3, 1);
     expect(epley(200, 1)).toBe(200);
+  });
+});
+
+describe('day plans and the agenda', () => {
+  it('a hand-picked workout replaces the schedule for that date', () => {
+    expect(planForDay('2026-11-17', S, [], [{ date: '2026-11-17', type: 'B' }])).toMatchObject({ kind: 'lift', lift: 'B', overridden: true });
+    expect(planForDay('2026-11-16', S, [], [{ date: '2026-11-16', type: 'rest' }])).toMatchObject({ kind: 'rest', overridden: true });
+    expect(planForDay('2026-11-16', S, [], [{ date: '2026-11-16', type: 'rest', deleted: true }]).kind).toBe('lift');
+  });
+  it('carries added workouts', () => {
+    expect(planForDay('2026-11-17', S, [], [{ date: '2026-11-17', extra: ['D'] }]).extra).toEqual(['D']);
+  });
+  it('projects a normal week', () => {
+    const a = projectAgenda('2026-11-16', 7, S, []);
+    expect(a.map((d) => (d.kind === 'lift' ? d.lift : d.kind))).toEqual(['A', 'cardio', 'B', 'cardio', 'C', 'dayD', 'rest']);
+    expect(a[5].testDay).toBe(true);
+  });
+  it('keeps the sequence when a lift day is changed to rest', () => {
+    const a = projectAgenda('2026-11-16', 5, S, [], [{ date: '2026-11-18', type: 'rest' }]);
+    expect(a.map((d) => (d.kind === 'lift' ? d.lift : d.kind))).toEqual(['A', 'cardio', 'rest', 'cardio', 'B']);
+  });
+  it('advances the sequence for moved and added lifts', () => {
+    const a = projectAgenda('2026-11-16', 5, S, [], [{ date: '2026-11-17', type: 'B' }]);
+    expect(a.map((d) => (d.kind === 'lift' ? d.lift : d.kind))).toEqual(['A', 'B', 'C', 'cardio', 'A']);
+    const b = projectAgenda('2026-11-16', 3, S, [], [{ date: '2026-11-16', extra: ['B'] }]);
+    expect(b[2].lift).toBe('C');
+  });
+  it('offers Sunday for Day D only when Saturday has none', () => {
+    const a = projectAgenda('2026-11-21', 2, S, [], [{ date: '2026-11-21', type: 'rest' }]);
+    expect(a.map((d) => d.kind)).toEqual(['rest', 'dayD']);
+  });
+  it('starts from what is already done', () => {
+    const a = projectAgenda('2026-11-18', 1, S, [done('2026-11-16', 'A')]);
+    expect(a[0].lift).toBe('B');
+  });
+});
+
+import { applyOrder } from './plans';
+describe('custom exercise order', () => {
+  const items = ['a', 'b', 'c', 'd'].map((key) => ({ key }));
+  it('sorts by the saved order', () => {
+    expect(applyOrder(items, ['c', 'a', 'd', 'b']).map((i) => i.key)).toEqual(['c', 'a', 'd', 'b']);
+  });
+  it('keeps unknown items (newly added moves) at the end in their original order', () => {
+    expect(applyOrder([...items, { key: 'add-x' }], ['d', 'c']).map((i) => i.key)).toEqual(['d', 'c', 'a', 'b', 'add-x']);
+  });
+  it('leaves the plan order alone when nothing is saved', () => {
+    expect(applyOrder(items, undefined).map((i) => i.key)).toEqual(['a', 'b', 'c', 'd']);
   });
 });

@@ -3,13 +3,15 @@ import type { Exercise } from '../plan/types';
 import { MUSCLES } from '../figure/figure';
 import { DiagramPair } from './Diagram';
 import { Pill } from './ui';
+import { DayTags, useCycleSwapDays } from './DayTags';
 import { SAFETY, SLOT_LABEL } from '../plan/content';
 
 export function ExerciseInfo({ ex }: { ex: Exercise }) {
+  const swapDays = useCycleSwapDays();
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-1.5">
-        <Pill tone={ex.inPlan ? 'accent' : 'muted'}>{ex.inPlan ? 'In my plan' : 'Swap option'}</Pill>
+        <DayTags id={ex.id} inPlan={ex.inPlan} swappedIn={swapDays[ex.id]} />
         {ex.slots.map((s) => <Pill key={s}>{SLOT_LABEL[s]}</Pill>)}
         {ex.main && <Pill tone="info">Main lift</Pill>}
         {ex.caution && <Pill tone="warn">{ex.caution}</Pill>}

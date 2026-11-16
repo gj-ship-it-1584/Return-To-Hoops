@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Button, Pill, Sheet } from '../ui';
-import { Thumb } from '../Diagram';
+import { Button, Sheet } from '../ui';
+import { ExerciseOption } from '../ExerciseOption';
 import { ALL_EXERCISES, EXERCISES } from '../../plan/exercises';
 import { SLOT_LABEL } from '../../plan/content';
 import type { PlanItem } from '../../plan/days';
@@ -70,25 +70,16 @@ export function SwapSheet({
         {currentId !== plannedId && (
           <Button className="w-full" onClick={backToPlan}>↩ Back to the plan: {EXERCISES[plannedId]?.name}</Button>
         )}
+        <p className="px-1 text-xs text-faint">Tap ⓘ to watch a move before you pick it.</p>
         {options.map((e) => (
-          <div key={e.id} className="rounded-2xl bg-card">
-            <button type="button" className="flex w-full items-center gap-3 p-3 text-left active:bg-card2" onClick={() => setPick(pick === e.id ? null : e.id)}>
-              <Thumb ex={e} size={64} />
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold">{e.name}</div>
-                <div className="mt-0.5 flex flex-wrap gap-1">
-                  {e.inPlan && <Pill tone="accent">In my plan</Pill>}
-                  {e.caution && <Pill tone="warn">{e.caution}</Pill>}
-                </div>
-              </div>
-            </button>
+          <ExerciseOption key={e.id} ex={e} onSelect={() => setPick(pick === e.id ? null : e.id)}>
             {pick === e.id && (
               <div className="grid grid-cols-2 gap-2 px-3 pb-3">
                 <Button kind="primary" onClick={() => apply(e.id, 'today')}>Just today</Button>
                 <Button onClick={() => apply(e.id, 'cycle')}>Rest of this cycle</Button>
               </div>
             )}
-          </div>
+          </ExerciseOption>
         ))}
       </div>
     </Sheet>

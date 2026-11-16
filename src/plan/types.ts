@@ -15,6 +15,10 @@ export type SlotId =
   | 'horizontalPull'
   | 'verticalPull'
   | 'upperBack'
+  | 'arms'
+  | 'shoulders'
+  | 'chest'
+  | 'legs'
   | 'core'
   | 'carry'
   | 'conditioning'
@@ -143,11 +147,34 @@ export type Prop = { only?: 'a' | 'b' } & (
   | { t: 'arrow'; from: XY; to: XY } // motion cue, world coordinates
 );
 
+/** Facing the viewer (or away, for a back view). Angles are absolute, measured from straight down:
+ *  0 = down, 90 = straight out to that side, 180 = straight up; negative = across the body.
+ *  "R" limbs are drawn on the right of the picture, "L" on the left. */
+export interface FrontPose {
+  /** torso tilt from vertical; + leans toward the picture's right */
+  lean?: number;
+  /** head tilt; defaults to lean */
+  head?: number;
+  armR: Angle2;
+  /** defaults to armR (mirrored) */
+  armL?: Angle2;
+  legR: Angle2;
+  legL?: Angle2;
+  /** foot direction, default 90 = pointing outward */
+  footR?: number;
+  footL?: number;
+  lift?: number;
+  contact?: 'lowest' | BodyPoint;
+  dx?: number;
+}
+
 export interface Diagram {
+  /** 'side' (default, poses are Pose) or 'front' / 'back' (poses are FrontPose) */
+  view?: 'side' | 'front' | 'back';
   /** start position */
-  a: Pose;
+  a: Pose | FrontPose;
   /** end position */
-  b: Pose;
+  b: Pose | FrontPose;
   props?: Prop[];
   /** labels under the two panels; default ['Start', 'End'] */
   labels?: [string, string];

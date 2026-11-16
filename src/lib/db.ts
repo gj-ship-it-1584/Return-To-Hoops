@@ -11,9 +11,24 @@ export interface Base {
   deleted?: boolean;
 }
 
-export type SessionType = DayId | 'mobility' | 'pickup';
+/** 'custom' = a free-form workout built from added exercises */
+export type SessionType = DayId | 'mobility' | 'pickup' | 'custom';
 export type PainKey = 'shoulder' | 'hamstring' | 'knee' | 'achilles';
 export type BallType = 'tennis' | 'volleyball' | 'basketball';
+
+/** An exercise added by hand to a workout or a planned day. */
+export interface AddedMove {
+  /** stable key; the plan item key is `add-${key}` */
+  key: string;
+  exercise: string;
+  sets: number;
+  reps?: number;
+  seconds?: number;
+  meters?: number;
+  makes?: number;
+  rounds?: number;
+  minutes?: number;
+}
 
 export interface Session extends Base {
   date: string;
@@ -32,6 +47,10 @@ export interface Session extends Base {
   note?: string;
   dunks?: { ball: BallType; made: boolean }[];
   pickup?: { minutes: number; feel: number; note?: string };
+  /** exercises added by hand to this session */
+  added?: AddedMove[];
+  /** custom exercise order (plan item keys) */
+  order?: string[];
   /** which card the session was on, so a reopened app lands in the same place */
   cursor?: string;
 }
@@ -84,13 +103,17 @@ export interface LabEntry extends Base, Partial<Record<LabKey, number>> {
 
 export interface CardioLog extends Base {
   date: string;
-  type: CardioType;
+  /** a CardioType or any activity id from lib/activities.ts */
+  type: CardioType | string;
+  /** name for "other" activities */
+  label?: string;
+  note?: string;
   minutes: number;
   hr?: number;
   incline?: number;
   speed?: number;
   distance?: number;
-  effort?: 'easy' | 'hard';
+  effort?: 'easy' | 'moderate' | 'hard';
 }
 
 export interface Checkin extends Base {
@@ -122,8 +145,27 @@ export interface Settings extends Base {
   standingReach?: number;
   bloodDraw?: string;
   goalWeight: number;
+  /** your preferred exercise order for each training day (plan item keys) */
+  dayOrder?: Record<string, string[]>;
   calories: number;
   dunkTarget: number;
+}
+
+/** A change to the schedule for one date: a different workout, extra workouts, or swapped moves. id = 'plan-YYYY-MM-DD'. */
+export interface PlannedDay extends Base {
+  date: string;
+  /** replaces what the schedule says for this date */
+  type?: SessionType | 'rest' | 'cardio';
+  /** workouts added on top */
+  extra?: SessionType[];
+  /** swapped moves for this date only: `${day}:${itemKey}` → exercise id */
+  swaps?: Record<string, string>;
+  /** exercises added by hand, per workout on this date ('A'…'D', 'mobility' or 'custom') */
+  moves?: Record<string, AddedMove[]>;
+  /** custom exercise order per workout on this date */
+  order?: Record<string, string[]>;
+  /** activities planned for this date */
+  activities?: { key: string; type: string; minutes: number; label?: string }[];
 }
 
 /** Device-only state (never synced). */
@@ -142,6 +184,7 @@ export class HoopsDB extends Dexie {
   checkins!: Table<Checkin, string>;
   tests!: Table<TestResult, string>;
   settings!: Table<Settings, string>;
+  plans!: Table<PlannedDay, string>;
   meta!: Table<Meta, string>;
 
   constructor(name = 'hoops') {
@@ -158,10 +201,11 @@ export class HoopsDB extends Dexie {
       settings: 'id, u',
       meta: 'id',
     });
+    this.version(2).stores({ plans: 'id, date, u' });
   }
 }
 
-export const SYNCED_TABLES = ['sessions', 'sets', 'swaps', 'body', 'labs', 'cardio', 'checkins', 'tests', 'settings'] as const;
+export const SYNCED_TABLES = ['sessions', 'sets', 'swaps', 'body', 'labs', 'cardio', 'checkins', 'tests', 'settings', 'plans'] as const;
 export type SyncedTable = (typeof SYNCED_TABLES)[number];
 
 export let db = new HoopsDB();
@@ -169,6 +213,8 @@ export let db = new HoopsDB();
 export function useDatabase(next: HoopsDB) {
   db = next;
 }
+
+export const planId = (date: string) => `plan-${date}`;
 
 export const uid = () =>
   (globalThis.crypto && 'randomUUID' in globalThis.crypto ? globalThis.crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);

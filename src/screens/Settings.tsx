@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Button, Card, Field, NumInput, Pill, SectionTitle, Segmented, toast } from '../components/ui';
-import { useSettings, useSyncStatus } from '../lib/hooks';
+import { back, useSettings, useSyncStatus } from '../lib/hooks';
 import { saveSettings, getMeta } from '../lib/store';
 import { dowName, fmtDate } from '../lib/dates';
 import { REACH_HOWTO, SAFETY } from '../plan/content';
+import { DAYS } from '../plan/days';
 import { exportBackup, parseBackup, restoreBackup, wipeLocal } from '../lib/backup';
 import { connect, disconnect, getLink, joinLink, newCode, parseConfig, pushAll, wipeRemote } from '../lib/sync';
 import { fromDisplay, toDisplay } from '../lib/units';
@@ -14,18 +15,21 @@ export default function SettingsScreen() {
   const set = (c: Parameters<typeof saveSettings>[0]) => void saveSettings(c);
   return (
     <div>
-      <h1 className="pt-2 text-2xl font-bold">Settings</h1>
+      <div className="flex items-center gap-1 pt-1">
+        <button type="button" onClick={back} className="-ml-2 flex min-h-11 min-w-11 items-center justify-center rounded-full text-3xl leading-none text-muted active:bg-card2" aria-label="Back">‹</button>
+        <h1 className="font-display text-[34px] leading-tight">Settings</h1>
+      </div>
 
       <SectionTitle>Program</SectionTitle>
       <Card className="space-y-4">
-        <Field label="Program start date (week 1, day 1)" hint={`${fmtDate(s.startDate)}. Use a Monday so Day A lands on Monday.`}>
+        <Field label="Program start date (week 1, day 1)" hint={`${fmtDate(s.startDate)}. Use a Monday so Vertical + legs lands on Monday.`}>
           <input type="date" className="min-h-11 w-full rounded-xl bg-card2 px-3" value={s.startDate} onChange={(e) => e.target.value && set({ startDate: e.target.value })} />
         </Field>
         <div className="space-y-2">
           <div className="text-sm text-muted">Lifting days</div>
           {(['A', 'B', 'C'] as const).map((d, i) => (
             <div key={d} className="flex items-center gap-3">
-              <div className="w-14 font-semibold">Day {d}</div>
+              <div className="w-24 text-sm">{DAYS[d].title}</div>
               <select
                 className="min-h-11 flex-1 rounded-xl bg-card2 px-3"
                 value={s.liftDays[i]}
@@ -40,7 +44,7 @@ export default function SettingsScreen() {
               </select>
             </div>
           ))}
-          <p className="text-xs text-faint">Day D is Saturday or Sunday. Non-lifting weekdays offer easy cardio.</p>
+          <p className="text-xs text-faint">Court day is Saturday or Sunday. Non-lifting weekdays offer easy cardio.</p>
         </div>
         <Field label="Blood draw scheduled" hint="No hard lifting, jumps or sprints for the 3 days before. Today switches to mobility + walking.">
           <div className="flex gap-2">

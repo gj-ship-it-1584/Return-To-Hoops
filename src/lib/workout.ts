@@ -1,6 +1,6 @@
 /* Session helpers: which exercise fills a slot today, last-time numbers, jump volume, swaps. */
-import { db, uid, type CycleSwap, type Session, type SessionType, type SetLog, type Checkin } from './db';
-import { save } from './store';
+import { db, uid, type AddedMove, type CycleSwap, type Session, type SessionType, type SetLog, type Checkin, type TestResult } from './db';
+import { remove, save } from './store';
 import { DAYS, type DayId, type PlanItem, type Rx } from '../plan/days';
 import { EXERCISES } from '../plan/exercises';
 import { programPosition } from './schedule';
@@ -9,7 +9,7 @@ import { addDays } from './dates';
 export const slotKeyOf = (day: string, item: PlanItem) => `${day}:${item.key}`;
 
 /** Planned exercise, unless swapped "just today" (session) or "rest of this cycle". */
-export function resolveExercise(day: DayId, item: PlanItem, week: number, session: Session | undefined, cycleSwaps: CycleSwap[]): { id: string; planned: string; swapped: 'today' | 'cycle' | null } {
+export function resolveExercise(day: string, item: PlanItem, week: number, session: Session | undefined, cycleSwaps: CycleSwap[]): { id: string; planned: string; swapped: 'today' | 'cycle' | null } {
   const planned = item.exercise(week);
   const today = session?.swaps?.[item.key];
   if (today && today !== planned) return { id: today, planned, swapped: 'today' };
@@ -18,7 +18,7 @@ export function resolveExercise(day: DayId, item: PlanItem, week: number, sessio
   return { id: planned, planned, swapped: null };
 }
 
-export async function startSession(type: SessionType, startDate: string, date: string): Promise<Session> {
+export async function startSession(type: SessionType, startDate: string, date: string, swaps: Record<string, string> = {}, added: AddedMove[] = [], order?: string[]): Promise<Session> {
   const pos = programPosition(startDate, date);
   return save<Session>('sessions', {
     id: uid(),
@@ -29,13 +29,19 @@ export async function startSession(type: SessionType, startDate: string, date: s
     startedAt: Date.now(),
     status: 'active',
     ticked: [],
-    swaps: {},
+    swaps,
+    added,
+    order,
   });
 }
 
 /** The most recent earlier session's completed sets for an exercise. */
-export async function lastSets(exerciseId: string, excludeSessionId?: string): Promise<{ date: string; sets: SetLog[] } | null> {
-  const all = await db.sets.where('exerciseId').equals(exerciseId).filter((s) => !s.deleted && s.done && s.sessionId !== excludeSessionId).toArray();
+export async function lastSets(exerciseId: string, excludeSessionId?: string, onOrBefore?: string): Promise<{ date: string; sets: SetLog[] } | null> {
+  const all = await db.sets
+    .where('exerciseId')
+    .equals(exerciseId)
+    .filter((s) => !s.deleted && s.done && s.sessionId !== excludeSessionId && (!onOrBefore || s.date <= onOrBefore))
+    .toArray();
   if (!all.length) return null;
   const latest = all.reduce((a, b) => (b.date > a.date || (b.date === a.date && b.u > a.u) ? b : a));
   const sets = all.filter((s) => s.sessionId === latest.sessionId).sort((a, b) => a.idx - b.idx);
@@ -87,3 +93,50 @@ export function rxText(rx: Rx): string {
 }
 
 export const dayItems = (day: DayId, week: number) => DAYS[day].items.filter((i) => i.rx(week) !== null);
+
+/** Move a session (and its sets) to another date, recomputing its cycle and week. */
+export async function moveSession(session: Session, date: string, startDate: string) {
+  if (date === session.date) return;
+  const pos = programPosition(startDate, date);
+  const shift = (new Date(date + 'T12:00:00').getTime() - new Date(session.date + 'T12:00:00').getTime());
+  await save<Session>('sessions', {
+    ...session,
+    date,
+    cycle: pos.cycle,
+    week: pos.week,
+    startedAt: session.startedAt + shift,
+    endedAt: session.endedAt !== undefined ? session.endedAt + shift : undefined,
+  });
+  const sets = await db.sets.where('sessionId').equals(session.id).filter((s) => !s.deleted).toArray();
+  for (const s of sets) await save<SetLog>('sets', { ...s, date });
+  // a Day D test result lives on the session's date
+  if (session.type === 'D') {
+    const tests = await db.tests.where('date').equals(session.date).filter((t) => !t.deleted).toArray();
+    for (const t of tests) await save<TestResult>('tests', { ...t, date, cycle: pos.cycle, week: pos.week });
+  }
+}
+
+/** Delete a session and everything logged in it (soft delete, so it syncs). */
+export async function deleteSession(session: Session) {
+  const sets = await db.sets.where('sessionId').equals(session.id).filter((s) => !s.deleted).toArray();
+  for (const s of sets) await remove('sets', s.id);
+  await remove('sessions', session.id);
+}
+
+/** Log a workout after the fact. */
+export async function createPastSession(type: SessionType, date: string, startDate: string, minutes = 60): Promise<Session> {
+  const pos = programPosition(startDate, date);
+  const start = new Date(date + 'T18:00:00').getTime();
+  return save<Session>('sessions', {
+    id: uid(),
+    date,
+    type,
+    cycle: pos.cycle,
+    week: pos.week,
+    startedAt: start,
+    endedAt: start + minutes * 60000,
+    status: 'done',
+    ticked: [],
+    swaps: {},
+  });
+}

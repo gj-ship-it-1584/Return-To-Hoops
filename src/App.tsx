@@ -8,22 +8,35 @@ import ExerciseDetail from './screens/ExerciseDetail';
 import BodyLog from './screens/BodyLog';
 import Trends from './screens/Trends';
 import SettingsScreen from './screens/Settings';
+import History from './screens/History';
+import Schedule from './screens/Schedule';
+import DayView from './screens/DayView';
 
 const TABS: { id: string; label: string; icon: ReactNode }[] = [
-  { id: '', label: 'Today', icon: <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z" /> },
-  { id: 'library', label: 'Library', icon: <path d="M5 4h4v16H5zM10 4h4v16h-4zM15.5 4.5l3.8-1 3.9 15.5-3.8 1z" /> },
-  { id: 'body', label: 'Body', icon: <path d="M12 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM7 10h10l-1.5 6H14l-.5 5h-3l-.5-5H8.5z" /> },
-  { id: 'trends', label: 'Trends', icon: <path d="M3 19h18M5 15l4-5 4 3 6-8" fill="none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /> },
-  { id: 'settings', label: 'Settings', icon: <path d="M12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zM10.5 2h3l.5 2.6 2.3 1 2.2-1.5 2.1 2.1-1.5 2.2 1 2.3 2.6.5v3l-2.6.5-1 2.3 1.5 2.2-2.1 2.1-2.2-1.5-2.3 1-.5 2.6h-3l-.5-2.6-2.3-1-2.2 1.5-2.1-2.1 1.5-2.2-1-2.3L2 13.5v-3l2.6-.5 1-2.3-1.5-2.2 2.1-2.1 2.2 1.5 2.3-1z" fillRule="evenodd" /> },
+  { id: '', label: 'Today', icon: <><circle cx="12" cy="12" r="8.5" /><path d="M12 3.5v17M3.5 12h17M6 6c3 2.5 3 9.5 0 12M18 6c-3 2.5-3 9.5 0 12" /></> },
+  { id: 'history', label: 'History', icon: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></> },
+  { id: 'library', label: 'Library', icon: <path d="M4.5 5.5c2.5-1 5-1 7.5.5 2.5-1.5 5-1.5 7.5-.5v13c-2.5-1-5-1-7.5.5-2.5-1.5-5-1.5-7.5-.5zM12 6v13" /> },
+  { id: 'body', label: 'Body', icon: <><circle cx="12" cy="5.5" r="2.5" /><path d="M6 10.5h12M12 10.5v4.5M12 15l-3 5.5M12 15l3 5.5" /></> },
+  { id: 'trends', label: 'Trends', icon: <path d="M3.5 19.5h17M5 15.5l4.5-5 3.5 3 6-7" /> },
 ];
 
 export default function App() {
   const [page, ...rest] = useRoute();
   if (page === 'workout') return (<><Workout /><ToastHost /></>);
+  if (page === 'history' && rest[0]) return (<><Workout id={rest[0]} /><ToastHost /></>);
   let screen: ReactNode;
   switch (page) {
     case 'library':
       screen = rest[0] ? <ExerciseDetail id={rest[0]} /> : <Library />;
+      break;
+    case 'history':
+      screen = <History />;
+      break;
+    case 'plan':
+      screen = <Schedule />;
+      break;
+    case 'day':
+      screen = rest[0] ? <DayView key={rest[0]} date={rest[0]} /> : <Schedule />;
       break;
     case 'body':
       screen = <BodyLog />;
@@ -41,13 +54,13 @@ export default function App() {
   return (
     <div className="mx-auto min-h-dvh max-w-lg">
       <main className="safe-top px-4 pb-28">{screen}</main>
-      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg/95 backdrop-blur">
+      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-bg/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-lg">
           {TABS.map((t) => {
             const on = active === t.id || (t.id === '' && !TABS.some((x) => x.id && x.id === active));
             return (
-              <button key={t.id} type="button" onClick={() => go(t.id)} className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] ${on ? 'text-accent' : 'text-faint'}`}>
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="currentColor" strokeWidth="0">
+              <button key={t.id} type="button" onClick={() => go(t.id)} className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-[3px] text-[10px] font-normal tracking-[0.06em] ${on ? 'text-accent' : 'text-faint'}`}>
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
                   {t.icon}
                 </svg>
                 {t.label}

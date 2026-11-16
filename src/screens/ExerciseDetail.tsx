@@ -33,7 +33,7 @@ export default function ExerciseDetail({ id }: { id: string }) {
     <div>
       <div className="flex items-center gap-2 pt-1">
         <button type="button" onClick={back} className="min-h-11 min-w-11 rounded-full text-2xl text-muted active:bg-card2" aria-label="Back">‹</button>
-        <h1 className="text-xl font-bold leading-tight">{ex.name}</h1>
+        <h1 className="font-display text-[30px] leading-tight">{ex.name}</h1>
       </div>
       <div className="mt-2">
         <ExerciseInfo ex={ex} />

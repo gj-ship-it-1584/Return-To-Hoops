@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 export function Card({ children, className = '', onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
   return (
-    <div className={`rounded-2xl bg-card p-4 ${onClick ? 'cursor-pointer active:bg-card2' : ''} ${className}`} onClick={onClick}>
+    <div className={`hairline rounded-[20px] bg-card p-4 ${onClick ? 'cursor-pointer active:bg-card2' : ''} ${className}`} onClick={onClick}>
       {children}
     </div>
   );
@@ -28,17 +28,17 @@ export function Button({
   big?: boolean;
 }) {
   const k = {
-    primary: 'bg-accent text-accent-ink font-semibold active:brightness-90',
-    secondary: 'bg-card2 text-ink active:bg-line',
-    ghost: 'bg-transparent text-muted active:bg-card2',
-    danger: 'bg-bad/15 text-bad active:bg-bad/25',
+    primary: 'rounded-full bg-accent text-accent-ink font-medium tracking-wide active:brightness-90',
+    secondary: 'rounded-full hairline bg-card2/60 text-ink active:bg-line',
+    ghost: 'rounded-full bg-transparent text-muted active:bg-card2',
+    danger: 'rounded-full border border-bad/30 bg-bad/10 text-bad active:bg-bad/20',
   }[kind];
   return (
     <button
       type={type}
       disabled={disabled}
       onClick={onClick}
-      className={`${big ? 'min-h-14 text-lg' : 'min-h-11'} rounded-xl px-4 ${k} disabled:opacity-40 ${className}`}
+      className={`${big ? 'min-h-14 text-[17px]' : 'min-h-11 text-[15px]'} px-5 ${k} disabled:opacity-40 ${className}`}
     >
       {children}
     </button>
@@ -81,7 +81,7 @@ export function NumInput({
     if (!focused.current) setDraft(value === undefined ? '' : String(value));
   }, [value]);
   return (
-    <label className={`flex min-h-11 items-center rounded-xl bg-card2 px-3 focus-within:ring-2 focus-within:ring-accent ${className}`}>
+    <label className={`flex min-h-11 items-center rounded-xl border border-line bg-card2/70 px-3 focus-within:border-accent/70 ${className}`}>
       {label && <span className="mr-2 shrink-0 text-xs text-muted">{label}</span>}
       <input
         className="tnum w-full min-w-0 bg-transparent py-2 text-center text-lg font-semibold outline-none placeholder:text-faint"
@@ -134,13 +134,13 @@ export function Segmented<T extends string | number>({
   className?: string;
 }) {
   return (
-    <div className={`flex rounded-xl bg-card2 p-1 ${className}`}>
+    <div className={`hairline flex rounded-full bg-card p-1 ${className}`}>
       {options.map((o) => (
         <button
           key={String(o.value)}
           type="button"
           onClick={() => onChange(o.value)}
-          className={`min-h-10 flex-1 rounded-lg px-2 text-sm ${o.value === value ? 'bg-accent font-semibold text-accent-ink' : 'text-muted active:bg-line'}`}
+          className={`min-h-10 flex-1 rounded-full px-2 text-[13px] tracking-[0.01em] transition-colors ${o.value === value ? 'bg-card2 text-accent ring-1 ring-accent/45' : 'text-muted active:bg-card2'}`}
         >
           {o.label}
         </button>
@@ -159,7 +159,7 @@ export function Scale({ value, onChange, danger = 3 }: { value: number | undefin
           type="button"
           onClick={() => onChange(n)}
           className={`tnum min-h-11 rounded-lg text-sm font-semibold ${
-            value === n ? (n > danger ? 'bg-bad text-white' : 'bg-accent text-accent-ink') : n > danger ? 'bg-card2 text-bad/80' : 'bg-card2 text-muted'
+            value === n ? (n > danger ? 'bg-bad text-bg' : 'bg-accent text-accent-ink') : n > danger ? 'border border-line text-bad/80' : 'border border-line text-muted'
           }`}
         >
           {n}
@@ -182,12 +182,13 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60" onClick={onClose}>
       <div
-        className="animate-rise safe-bottom max-h-[92dvh] overflow-y-auto rounded-t-3xl bg-bg px-4 pt-3"
+        className="animate-rise safe-bottom hairline max-h-[92dvh] overflow-y-auto rounded-t-[28px] border-b-0 bg-bg px-4 pt-2"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
       >
+        <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-line" />
         <div className="sticky top-0 z-10 -mx-4 flex items-center gap-2 bg-bg px-4 pb-2">
-          <div className="min-w-0 flex-1 text-lg font-semibold">{title}</div>
+          <div className="min-w-0 flex-1 font-display text-2xl leading-tight">{title}</div>
           <button type="button" onClick={onClose} className="min-h-11 min-w-11 rounded-full text-2xl text-muted active:bg-card2" aria-label="Close">
             ×
           </button>
@@ -216,7 +217,7 @@ export function ToastHost() {
   if (!msg) return null;
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-4 safe-top">
-      <div className="animate-pop rounded-full bg-ink px-4 py-2 text-sm font-medium text-bg shadow-lg">{msg}</div>
+      <div className="animate-pop rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-ink shadow-lg">{msg}</div>
     </div>
   );
 }
@@ -224,7 +225,7 @@ export function ToastHost() {
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
     <div className="mt-6 mb-2 flex items-end justify-between px-1">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">{children}</h2>
+      <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted">{children}</h2>
       {right}
     </div>
   );

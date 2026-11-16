@@ -643,8 +643,9 @@ export const exercises: Exercise[] = [
     easier: 'Shallower depth, hold a rail or post.',
     harder: 'Goblet a dumbbell or kettlebell and add 5 lb at a time.',
     diagram: {
-      a: { torso: 180, armN: [70, 90], armF: [66, 86], legN: [36, 36], legF: [-36, -36] },
-      b: { torso: 160, head: 170, armN: [80, 95], armF: [76, 91], legN: [95, -35], legF: [-69, -69], footF: 180, dx: 16 },
+      view: 'front',
+      a: { armR: [40, -105], legR: [34, 34] },
+      b: { armR: [40, -105], legR: [71, -14], legL: [52, 52], footL: 160, dx: 11 },
       labels: ['Wide stance', 'Sit to one side'],
     },
   },
@@ -668,8 +669,9 @@ export const exercises: Exercise[] = [
     easier: 'Body weight, shorter step.',
     harder: 'Add 5 lb when every set hits the top of the rep range.',
     diagram: {
-      a: { ...P.stand, armN: [15, 170], armF: [12, 167] },
-      b: { torso: 150, head: 165, armN: [35, 165], armF: [32, 162], legN: [85, -30], legF: [-62, -62], footF: 110, dx: 38 },
+      view: 'front',
+      a: { armR: [25, -120], legR: [-4, -4] },
+      b: { lean: 8, armR: [30, -112], legR: [60, -5], legL: [40, 40], dx: 32 },
       labels: ['Start', 'Step out and sit'],
       props: [{ t: 'dumbbell', at: 'hands' }],
     },

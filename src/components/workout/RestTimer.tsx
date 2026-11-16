@@ -77,32 +77,28 @@ export function RestTimer({ sound, vibrate }: { sound: boolean; vibrate: boolean
   return (
     <>
       {flash && <div className="animate-flash pointer-events-none fixed inset-0 z-40" />}
-      <div className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 backdrop-blur">
-        <div className="mx-auto max-w-lg px-4 pt-2">
-          <div className="h-1 overflow-hidden rounded-full bg-card2">
-            <div className="h-full bg-accent transition-[width] duration-200" style={{ width: `${pct}%` }} />
-          </div>
-          <div className="flex items-center gap-3 py-2">
-            <div className="min-w-0 flex-1">
-              <div className="text-xs text-muted">{done ? 'Rest done — go' : `Rest · ${rest.label}`}</div>
-              <div className={`tnum text-3xl font-bold ${done ? 'text-accent' : ''}`}>{fmtClock(left)}</div>
-            </div>
-            <button
-              type="button"
-              className="min-h-12 min-w-16 rounded-xl bg-card2 font-semibold active:bg-line"
-              onClick={() => {
-                const r = { ...rest, endsAt: Math.max(rest.endsAt, Date.now()) + 30000, total: rest.total + 30 };
-                localStorage.setItem(KEY, JSON.stringify(r));
-                alerted.current = 0;
-                setRest(r);
-              }}
-            >
-              +30 s
-            </button>
-            <button type="button" className="min-h-12 min-w-16 rounded-xl bg-accent font-semibold text-accent-ink active:brightness-90" onClick={clear}>
-              Skip
-            </button>
-          </div>
+      <div className="safe-bottom pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4">
+        <div className="pointer-events-auto mx-auto mb-2 flex max-w-lg items-center gap-2.5 rounded-full border border-accent/70 bg-card/95 py-1.5 pr-1.5 pl-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur">
+          <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted">{done ? 'Go' : 'Rest'}</span>
+          <span className={`tnum font-display text-[26px] leading-none ${done ? 'text-good' : 'text-accent'}`}>{fmtClock(left)}</span>
+          <span className="h-[2px] min-w-0 flex-1 overflow-hidden rounded-full bg-line">
+            <span className="block h-full bg-accent transition-[width] duration-200" style={{ width: `${pct}%` }} />
+          </span>
+          <button
+            type="button"
+            className="min-h-10 rounded-full border border-line px-3 text-[12px] text-muted active:bg-card2"
+            onClick={() => {
+              const r = { ...rest, endsAt: Math.max(rest.endsAt, Date.now()) + 30000, total: rest.total + 30 };
+              localStorage.setItem(KEY, JSON.stringify(r));
+              alerted.current = 0;
+              setRest(r);
+            }}
+          >
+            +30
+          </button>
+          <button type="button" className="min-h-10 rounded-full bg-accent px-4 text-[12px] font-medium text-accent-ink active:brightness-90" onClick={clear}>
+            Skip
+          </button>
         </div>
       </div>
     </>

@@ -32,14 +32,14 @@ list.forEach((e, i) => {
   const cx = 10 + (i % COLS) * cellW;
   const cy = 10 + Math.floor(i / COLS) * cellH;
   const view = fitView(e.diagram);
-  body += `<text x="${cx + 4}" y="${cy + 16}" fill="#e6e9ef" font-family="Segoe UI, Arial" font-size="14" font-weight="600">${esc(e.name)} <tspan fill="#8a93a3" font-weight="400">(${e.id})</tspan></text>`;
+  body += `<text x="${cx + 4}" y="${cy + 16}" fill="#e6e9ef" font-family="Segoe UI, Arial" font-size="14" font-weight="600">${esc(e.name)} <tspan fill="#8a93a3" font-weight="400">(${e.id}${e.diagram.view && e.diagram.view !== 'side' ? ' · ' + e.diagram.view + ' view' : ''})</tspan></text>`;
   [0, 0.5, 1].forEach((t, k) => {
     const inner = renderFrame(e.diagram, { t, view, inner: true, muscles: e.muscles });
     const x = cx + k * (PW + 4), y = cy + LABEL;
     body += `<rect x="${x}" y="${y}" width="${PW}" height="${PH}" fill="#141821" rx="6"/>`;
     body += `<svg x="${x}" y="${y}" width="${PW}" height="${PH}" viewBox="${view.x} ${view.y} ${view.w} ${view.h}" preserveAspectRatio="xMidYMax meet">${inner}</svg>`;
   });
-  const ra = contactReport(e.diagram.a), rb = contactReport(e.diagram.b);
+  const ra = contactReport(e.diagram.a, e.diagram.view), rb = contactReport(e.diagram.b, e.diagram.view);
   console.log(`${e.id}\n  A ${JSON.stringify(ra)}\n  B ${JSON.stringify(rb)}`);
 });
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${body}</svg>`;

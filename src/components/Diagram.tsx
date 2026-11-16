@@ -9,8 +9,10 @@ export function DiagramPair({ ex }: { ex: Exercise }) {
   const [anim, setAnim] = useState(false);
   const view = useMemo(() => fitView(ex.diagram), [ex]);
   const labels = ex.diagram.labels ?? ['Start', 'End'];
+  const v = ex.diagram.view;
   return (
     <div>
+      {v && v !== 'side' && <div className="mb-1.5 text-center text-[11px] uppercase tracking-[0.18em] text-muted">{v === 'front' ? 'Front view' : 'Back view'}</div>}
       {anim ? (
         <AnimatedFigure ex={ex} />
       ) : (
@@ -32,7 +34,7 @@ export function DiagramPair({ ex }: { ex: Exercise }) {
   );
 }
 
-function AnimatedFigure({ ex }: { ex: Exercise }) {
+export function AnimatedFigure({ ex }: { ex: Exercise }) {
   const ref = useRef<HTMLDivElement>(null);
   const view = useMemo(() => fitView(ex.diagram), [ex]);
   useEffect(() => {

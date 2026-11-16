@@ -75,8 +75,8 @@ Without this, your data lives only on the phone. iPhone can clear website storag
 
 ## Everyday use
 
-- **Today** shows the week, phase and effort cue, plus what to do: Day A on Monday, B on Wednesday, C on Friday. Day D (court) is optional on Saturday or Sunday. Easy cardio is optional on Tuesday and Thursday. Other days show a 5-minute desk reset plus a dog walk.
-- **Missed a day?** Lifting days run A → B → C in order. If you skip Monday, Wednesday shows Day A again, not B. **Pick a different session** lets you start anything.
+- **Today** shows the week, phase and effort cue, plus what to do: Vertical + legs on Monday, Upper body on Wednesday, Lateral + conditioning on Friday. Court day is optional on Saturday or Sunday. Easy cardio is optional on Tuesday and Thursday. Other days show a 5-minute desk reset plus a dog walk.
+- **Missed a day?** Lifting days run in order: Vertical + legs → Upper body → Lateral + conditioning. If you skip Monday, Wednesday shows Vertical + legs again, not Upper body. **Pick a different session** lets you start anything.
 - **Start workout** walks you through the warm-up, then each exercise:
   - Each card shows today's sets × reps and what you did last time. The inputs are pre-filled; tap ✓ to log a set.
   - A rest timer starts after each set: 150 s for main lifts, 75 s for everything else. Use **+30 s** or **Skip**.
@@ -84,6 +84,13 @@ Without this, your data lives only on the phone. iPhone can clear website storag
   - If you don't hear the beep, check the ring/silent switch: some iOS versions mute web audio on silent.
 - **Swap** on any card shows alternatives for that movement. Pick **Just today** or **Rest of this cycle**. Your numbers are kept for each exercise separately, so switching back later shows your old weights.
 - **Finish** asks for the pain check (shoulder, hamstring, knee, Achilles). Anything above 3 shows what to do.
+- **History** lists every workout, cardio session and weigh-in, newest first. Tap a workout to fix a weight or rep, add or remove a set (✕), change the date or length, edit the pain check, or delete it. Tap a cardio or body entry to edit or delete it. **+ Past workout** logs a session you forgot to record.
+- **Schedule** (Today → This week → Schedule, or tap any day in the week strip): every upcoming day with its moves and this week's sets and reps. On any day you can **Change** the workout (move Upper body to Thursday, make it a rest day…), **+ Add a workout**, or **Swap** a move for that day only or for the rest of the cycle. Lifting days still run in order, so moving one shifts the ones after it. Changed days show a gold dot.
+- **+ Add to this day** (on any day in the Schedule, or "Add to or change today"): one searchable list of activities (basketball, run, walk, hike, swim, yoga, tennis, golf or your own), workouts, and single exercises. On today or a past day an activity is logged; on a future day it is planned and Today offers **Log it** when the day comes. Basketball counts toward your weekly sessions.
+- **Reorder** (on a workout, or on any planned day in the Schedule): press and drag the ⠿ handle to change the exercise order. Tick "Use this order every time" to make it your default for that training day. The warm-up stays first and the prehab circuit last.
+- **Add an exercise** to any workout: during a session (bottom of the list), when editing one in History, or ahead of time on any day in the Schedule. Search or browse the library, set sets and reps, and it shows up with its own card, last-time numbers and rest timer. **Remove** takes it off again.
+- **Library** tags every move with the day it's on ("Vertical + legs · wk 4–5"), and the chips filter by day.
+- **Settings** is the gear at the top right of Today.
 - **Body**: weight, waist (every 2 weeks), optional sleep, calories, protein and steps; **Labs**; **Cardio** and dog walks.
 - **Trends**:
   - Dunk tracker at the top: inches to go to a 10′6″ touch.

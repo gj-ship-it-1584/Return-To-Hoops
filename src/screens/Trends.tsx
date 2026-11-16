@@ -102,7 +102,7 @@ export default function Trends() {
 
   return (
     <div>
-      <h1 className="pt-2 text-2xl font-bold">Trends</h1>
+      <h1 className="pt-2 font-display text-[34px] leading-tight">Trends</h1>
       <Segmented
         className="mt-3"
         options={[{ value: '4w', label: '4 weeks' }, { value: '12w', label: '12 weeks' }, { value: 'all', label: 'All time' }]}
@@ -115,14 +115,14 @@ export default function Trends() {
         <div className="flex items-end justify-between">
           <div>
             <div className="text-xs text-muted">Best approach touch</div>
-            <div className="tnum text-3xl font-black">{bestTouch !== null ? `${bestTouch}″` : '—'}</div>
+            <div className="font-display text-[44px] leading-none">{bestTouch !== null ? `${bestTouch}″` : '—'}</div>
             {bestTouch !== null && <div className="text-xs text-faint">{fmtFtIn(bestTouch)} · target {fmtFtIn(settings.dunkTarget)}</div>}
           </div>
           <div className="text-right">
             {toGo !== null ? (
               toGo === 0 ? <div className="text-xl font-bold text-good">Target reached 🏀</div> : (
                 <>
-                  <div className="tnum text-3xl font-black text-accent">{toGo % 1 ? toGo.toFixed(1) : toGo}″</div>
+                  <div className="font-display text-[44px] leading-none text-accent">{toGo % 1 ? toGo.toFixed(1) : toGo}″</div>
                   <div className="text-xs text-muted">to go</div>
                 </>
               )
@@ -233,11 +233,11 @@ export default function Trends() {
       <Card>
         <div className="text-sm text-muted">Bike interval rounds per session</div>
         <LineChart series={[{ points: rounds, color: CHART.accent, label: 'Rounds' }]} height={120} />
-        <div className="mt-3 text-sm text-muted">Day D court conditioning (best time, s)</div>
+        <div className="mt-3 text-sm text-muted">Court day conditioning (best time, s)</div>
         <LineChart series={[{ points: suicides, color: CHART.blue, label: 'Suicide' }, { points: seventeens, color: CHART.yellow, label: '17s' }]} height={120} refs={seventeens.length ? [{ y: 70, label: '70 s', color: CHART.green }] : []} />
       </Card>
 
-      <SectionTitle>Shooting (Day D)</SectionTitle>
+      <SectionTitle>Shooting (court day)</SectionTitle>
       <Card>
         <LineChart series={[{ points: spots, color: CHART.accent, label: 'Spot shooting %' }, { points: fts, color: CHART.blue, label: 'Free throws %' }]} yFmt={(v) => `${Math.round(v)}%`} height={140} />
       </Card>
@@ -290,7 +290,7 @@ function Row({ label, value }: { label: string; value: ReactNode }) {
   return <div className="flex justify-between py-1 text-sm"><span className="text-muted">{label}</span><span className="tnum font-semibold">{value}</span></div>;
 }
 function Stat({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl bg-card2 p-3"><div className="text-xs text-muted">{label}</div><div className="tnum text-2xl font-bold">{value}</div></div>;
+  return <div className="rounded-xl bg-card2 p-3"><div className="text-xs text-muted">{label}</div><div className="font-display text-[32px] leading-none">{value}</div></div>;
 }
 function Empty({ text = 'Starts once the program begins.' }: { text?: string }) {
   return <div className="flex h-20 items-center justify-center rounded-xl bg-card2 text-sm text-faint">{text}</div>;

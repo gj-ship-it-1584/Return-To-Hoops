@@ -81,11 +81,23 @@ export interface TodayPlan {
   doneToday: string[];
   pos: ProgramPos;
   bloodDrawIn?: number;
+  /** today's plan was changed by hand */
+  overridden: boolean;
+  /** workouts added to today on top of the main one */
+  extra: string[];
+}
+
+/** A hand-made change for one date (see PlannedDay in db.ts). */
+export interface PlanLite {
+  date: string;
+  type?: string;
+  extra?: string[];
+  deleted?: boolean;
 }
 
 const isWeekend = (wd: number) => wd === 0 || wd === 6;
 
-export function planForDay(date: string, s: ScheduleSettings, sessions: SessionLite[]): TodayPlan {
+export function planForDay(date: string, s: ScheduleSettings, sessions: SessionLite[], plans: PlanLite[] = []): TodayPlan {
   const pos = programPosition(s.startDate, date);
   const wd = weekday(date);
   const live = sessions.filter((x) => !x.deleted);
@@ -95,11 +107,20 @@ export function planForDay(date: string, s: ScheduleSettings, sessions: SessionL
   const nextAfterToday = nextLift(live, date);
   const liftIdx = s.liftDays.indexOf(wd);
   const calendarLift = liftIdx >= 0 ? LIFT_ORDER[liftIdx] : undefined;
-  const base = { behind: false, next: nextAfterToday, cardioSuggested: false, testDay: false, doneToday, pos };
+  const plan = plans.find((p) => p.date === date && !p.deleted);
+  const base = { behind: false, next: nextAfterToday, cardioSuggested: false, testDay: false, doneToday, pos, overridden: false, extra: plan?.extra ?? [] };
 
   if (s.bloodDraw) {
     const until = diffDays(date, s.bloodDraw);
     if (until >= 0 && until <= 3) return { ...base, kind: 'bloodDraw', bloodDrawIn: until };
+  }
+
+  if (plan?.type) {
+    const o = { ...base, overridden: true };
+    if ((LIFT_ORDER as string[]).includes(plan.type)) return { ...o, kind: 'lift', lift: plan.type as DayId, calendarLift: plan.type as DayId };
+    if (plan.type === 'D') return { ...o, kind: 'dayD', testDay: pos.started && pos.testWeek };
+    if (plan.type === 'cardio') return { ...o, kind: 'cardio', cardioSuggested: true };
+    return { ...o, kind: 'rest' };
   }
 
   if (calendarLift) {
@@ -145,4 +166,66 @@ export function currentStreak(counts: number[], target = 3): number {
   let n = 0;
   for (; i >= 0 && counts[i] >= target; i--) n++;
   return n;
+}
+
+/* ---------- the agenda: what each upcoming day holds ---------- */
+export type AgendaKind = 'lift' | 'dayD' | 'cardio' | 'rest' | 'mobility' | 'bloodDraw' | 'pickup';
+
+export interface AgendaDay {
+  date: string;
+  kind: AgendaKind;
+  /** the lift when kind = 'lift' */
+  lift?: DayId;
+  optional: boolean;
+  /** changed by hand for this date */
+  overridden: boolean;
+  /** workouts added on top */
+  extra: string[];
+  testDay: boolean;
+  pos: ProgramPos;
+}
+
+/** Project the schedule forward from `from`, assuming each planned lift gets done in order. */
+export function projectAgenda(from: string, days: number, s: ScheduleSettings, sessions: SessionLite[], plans: PlanLite[] = []): AgendaDay[] {
+  const live = sessions.filter((x) => !x.deleted);
+  let seq = nextLift(live, addDays(from, -1));
+  const advance = (d: DayId) => {
+    seq = LIFT_ORDER[(LIFT_ORDER.indexOf(d) + 1) % LIFT_ORDER.length];
+  };
+  const out: AgendaDay[] = [];
+  for (let i = 0; i < days; i++) {
+    const date = addDays(from, i);
+    const pos = programPosition(s.startDate, date);
+    const wd = weekday(date);
+    const plan = plans.find((p) => p.date === date && !p.deleted);
+    const extra = plan?.extra ?? [];
+    const base = { date, optional: false, overridden: false, extra, testDay: false, pos };
+    let day: AgendaDay;
+    const until = s.bloodDraw ? diffDays(date, s.bloodDraw) : -1;
+    if (until >= 0 && until <= 3) {
+      day = { ...base, kind: 'bloodDraw' };
+    } else if (plan?.type) {
+      const t = plan.type;
+      if ((LIFT_ORDER as string[]).includes(t)) day = { ...base, kind: 'lift', lift: t as DayId, overridden: true };
+      else if (t === 'D') day = { ...base, kind: 'dayD', optional: true, overridden: true, testDay: pos.started && pos.testWeek };
+      else if (t === 'cardio') day = { ...base, kind: 'cardio', optional: true, overridden: true };
+      else if (t === 'mobility') day = { ...base, kind: 'mobility', overridden: true };
+      else day = { ...base, kind: 'rest', overridden: true };
+    } else if (s.liftDays.includes(wd)) {
+      // a lift already done today counts
+      const doneHere = live.find((x) => x.date === date && x.status === 'done' && (LIFT_ORDER as string[]).includes(x.type));
+      day = { ...base, kind: 'lift', lift: (doneHere?.type as DayId) ?? seq };
+    } else if (isWeekend(wd)) {
+      const prev = out[out.length - 1];
+      const satHadD = wd === 0 && ((prev && prev.date === addDays(date, -1) && (prev.kind === 'dayD' || prev.extra.includes('D'))) ||
+        live.some((x) => x.type === 'D' && x.status === 'done' && x.date === addDays(date, -1)));
+      day = satHadD ? { ...base, kind: 'rest' } : { ...base, kind: 'dayD', optional: true, testDay: pos.started && pos.testWeek };
+    } else {
+      day = { ...base, kind: 'cardio', optional: true };
+    }
+    if (day.kind === 'lift' && day.lift) advance(day.lift);
+    for (const e of extra) if ((LIFT_ORDER as string[]).includes(e)) advance(e as DayId);
+    out.push(day);
+  }
+  return out;
 }

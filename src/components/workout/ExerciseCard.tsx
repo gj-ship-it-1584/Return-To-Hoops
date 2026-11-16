@@ -8,10 +8,10 @@ import { IntervalTimer } from './IntervalTimer';
 import { DunkLogger } from './Extras';
 import { startRest } from './RestTimer';
 import { EXERCISES } from '../../plan/exercises';
-import type { DayId, PlanItem, Rx } from '../../plan/days';
+import type { PlanItem, Rx } from '../../plan/days';
 import type { LogField } from '../../plan/types';
 import { db, uid, type CycleSwap, type Session, type SetLog, type Settings } from '../../lib/db';
-import { patch, save } from '../../lib/store';
+import { patch, remove, save } from '../../lib/store';
 import { halveJumps, lastSets, resolveExercise, rxText, slotKeyOf } from '../../lib/workout';
 import { deloadWeight, progressionHint } from '../../lib/progression';
 import { fromDisplay, toDisplay, fmtFtIn } from '../../lib/units';
@@ -50,8 +50,11 @@ export function ExerciseCard({
   settings,
   halved,
   onInfo,
+  review = false,
+  onRemove,
 }: {
-  day: DayId;
+  /** session type ('A'…'D', 'mobility', 'pickup'); used for slot keys */
+  day: string;
   item: PlanItem;
   week: number;
   session: Session;
@@ -60,6 +63,10 @@ export function ExerciseCard({
   settings: Settings;
   halved: boolean;
   onInfo: (id: string) => void;
+  /** editing a finished session from History: no rest timer, no hints, rows can be deleted */
+  review?: boolean;
+  /** shown for exercises added by hand */
+  onRemove?: () => void;
 }) {
   const { id, planned, swapped } = resolveExercise(day, item, week, session, cycleSwaps);
   const ex = EXERCISES[id];
@@ -70,7 +77,7 @@ export function ExerciseCard({
   const rowIds = useRef(new Map<string, string>());
   let rx = item.rx(week) as Rx;
   if (halved && ex?.jump) rx = halveJumps(rx);
-  const last = useLiveQuery(() => lastSets(id, session.id), [id, session.id]);
+  const last = useLiveQuery(() => lastSets(id, session.id, session.date), [id, session.id, session.date]);
   const mine = useMemo(() => sets.filter((s) => s.slotKey === slotKey && s.exerciseId === id).sort((a, b) => a.idx - b.idx), [sets, slotKey, id]);
   const scapReady = useLiveQuery(async () => {
     if (id !== 'scap-pushup') return false;
@@ -81,13 +88,13 @@ export function ExerciseCard({
   }, [id, session.id]);
 
   if (!ex) {
-    return <div className="rounded-2xl bg-card p-4 text-sm text-muted">Missing exercise “{id}” in the library.</div>;
+    return <div className="hairline rounded-[20px] bg-card p-4 text-sm text-muted">Missing exercise “{id}” in the library.</div>;
   }
 
   const restSecs = plannedEx?.main ? settings.restMain : settings.restOther;
   const rows = Math.max(rx.sets, mine.length ? Math.max(...mine.map((s) => s.idx)) + 1 : 0);
   const doneCount = mine.filter((s) => s.done).length;
-  const hint = last ? progressionHint(ex, rx, last.sets) : null;
+  const hint = last && !review ? progressionHint(ex, rx, last.sets) : null;
   const deload = week === 13;
   const fields = ex.log;
 
@@ -130,7 +137,7 @@ export function ExerciseCard({
   const special = id === 'dunk-attempt' ? 'dunk' : item.key === 'intervals' || id === 'bike-intervals' || id === 'rower-intervals' || id === 'jump-rope-intervals' ? 'intervals' : null;
 
   return (
-    <div className="rounded-2xl bg-card p-3">
+    <div className="hairline rounded-[20px] bg-card p-3">
       <div className="flex gap-3">
         <button type="button" onClick={() => onInfo(id)} aria-label={`About ${ex.name}`}>
           <Thumb ex={ex} size={72} />
@@ -151,6 +158,12 @@ export function ExerciseCard({
         </button>
       </div>
 
+      {onRemove && (
+        <div className="mt-1 flex items-center justify-between">
+          <span className="text-xs text-faint">Added by you</span>
+          <button type="button" onClick={onRemove} className="min-h-9 px-2 text-xs text-muted active:text-bad">Remove</button>
+        </div>
+      )}
       {item.note && <p className="mt-2 text-xs text-faint">{item.note}</p>}
       {ex.jump && <p className="mt-2 text-xs text-faint">Max effort every rep, full rest. End the set if height drops.</p>}
 
@@ -161,7 +174,7 @@ export function ExerciseCard({
         </div>
       )}
       {hint && <div className="mt-2 rounded-lg bg-good/10 px-3 py-2 text-sm font-semibold text-good">↑ {hint}</div>}
-      {scapReady && (
+      {scapReady && !review && (
         <div className="mt-2 rounded-lg bg-good/10 px-3 py-2 text-sm text-good">
           2 × 12 for two sessions — ready for push-up plus? Tap Swap and pick it.
         </div>
@@ -171,12 +184,14 @@ export function ExerciseCard({
         <div className="mt-3"><DunkLogger session={session} max={rx.reps as number} /></div>
       ) : special === 'intervals' ? (
         <div className="mt-3 space-y-2">
-          <IntervalTimer
-            rounds={rx.rounds ?? 10}
-            sound={settings.sound}
-            vibrate={settings.vibrate}
-            onDone={(n) => void write(0, { rounds: n }, true)}
-          />
+          {!review && (
+            <IntervalTimer
+              rounds={rx.rounds ?? 10}
+              sound={settings.sound}
+              vibrate={settings.vibrate}
+              onDone={(n) => void write(0, { rounds: n }, true)}
+            />
+          )}
           <SetRow idx={0} label="Rounds" fields={['rounds']} existing={mine.find((s) => s.idx === 0)} draft={{ rounds: rx.rounds }} units={settings.units} onChange={(v) => write(0, v, mine.find((s) => s.idx === 0)?.done ?? false)} onTick={(v, d) => write(0, v, d)} />
         </div>
       ) : (
@@ -194,8 +209,10 @@ export function ExerciseCard({
               onChange={(v) => write(idx, v, mine.find((s) => s.idx === idx)?.done ?? false)}
               onTick={(v, d) => {
                 void write(idx, v, d);
-                if (d) startRest(restSecs, ex.name);
+                if (d && !review) startRest(restSecs, ex.name);
               }}
+              onDelete={review && mine.find((s) => s.idx === idx) ? () => void remove('sets', mine.find((s) => s.idx === idx)!.id) : undefined}
+              reserveDelete={review}
             />
           ))}
           <button
@@ -232,6 +249,8 @@ function SetRow({
   makesOf,
   onChange,
   onTick,
+  onDelete,
+  reserveDelete,
 }: {
   idx: number;
   label?: string;
@@ -242,6 +261,8 @@ function SetRow({
   makesOf?: number;
   onChange: (v: Vals) => void;
   onTick: (v: Vals, done: boolean) => void;
+  onDelete?: () => void;
+  reserveDelete?: boolean;
 }) {
   const initial = (): Vals => {
     const v: Vals = {};
@@ -292,6 +313,12 @@ function SetRow({
       >
         ✓
       </button>
+      {!onDelete && reserveDelete && <span className="w-9 shrink-0" />}
+      {onDelete && (
+        <button type="button" aria-label="Delete set" onClick={() => confirm('Delete this set?') && onDelete()} className="flex h-12 w-9 shrink-0 items-center justify-center rounded-xl text-faint active:bg-card2">
+          ✕
+        </button>
+      )}
     </div>
   );
 }

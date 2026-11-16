@@ -14,7 +14,7 @@ export default function BodyLog() {
   const [tab, setTab] = useState<'body' | 'labs' | 'cardio'>('body');
   return (
     <div>
-      <h1 className="pt-2 text-2xl font-bold">Body log</h1>
+      <h1 className="pt-2 font-display text-[34px] leading-tight">Body log</h1>
       <Segmented
         className="mt-3"
         options={[{ value: 'body', label: 'Body' }, { value: 'labs', label: 'Labs' }, { value: 'cardio', label: 'Cardio' }]}
@@ -52,7 +52,7 @@ function Body() {
       {!rows.length ? (
         <Card><p className="text-sm text-muted">Nothing logged yet.</p></Card>
       ) : (
-        <div className="divide-y divide-line overflow-hidden rounded-2xl bg-card">
+        <div className="divide-y divide-line overflow-hidden hairline rounded-[20px] bg-card">
           {rows.map((r) => (
             <div key={r.id} className="flex items-center gap-3 px-4 py-2">
               <div className="w-14 shrink-0 text-sm text-muted">{fmtShort(r.date)}</div>
@@ -152,7 +152,7 @@ function Cardio() {
       {!rows.length ? (
         <Card><p className="text-sm text-muted">Nothing logged yet.</p></Card>
       ) : (
-        <div className="divide-y divide-line overflow-hidden rounded-2xl bg-card">
+        <div className="divide-y divide-line overflow-hidden hairline rounded-[20px] bg-card">
           {rows.map((r) => (
             <div key={r.id} className="flex items-center gap-3 px-4 py-2 text-sm">
               <div className="w-14 shrink-0 text-muted">{fmtShort(r.date)}</div>

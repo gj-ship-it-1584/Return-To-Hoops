@@ -24,8 +24,8 @@ export default defineConfig({
         orientation: 'portrait',
         start_url: './',
         scope: './',
-        background_color: '#0b0d12',
-        theme_color: '#0b0d12',
+        background_color: '#121110',
+        theme_color: '#121110',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -33,7 +33,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}', '**/*-latin-*.woff2'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         navigateFallback: 'index.html',
       },

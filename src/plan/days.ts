@@ -4,7 +4,7 @@
 import type { SlotId } from './types';
 
 export type DayId = 'A' | 'B' | 'C' | 'D';
-export type Section = 'main' | 'court' | 'conditioning' | 'prehab';
+export type Section = 'main' | 'accessory' | 'added' | 'court' | 'conditioning' | 'prehab';
 
 export interface Rx {
   sets: number;
@@ -33,7 +33,10 @@ export interface PlanItem {
 
 export interface DayPlan {
   id: DayId;
+  /** full name shown on cards, e.g. "Vertical + legs" */
   title: string;
+  /** one-word label for tight spots (week strip, badges, chips) */
+  short: string;
   subtitle: string;
   optional?: boolean;
   /** note shown at the top of the session */
@@ -66,7 +69,8 @@ export const PREHAB_NOTE = 'Light bands or 2–5 lb. No sharp pain at the top of
 export const DAYS: Record<DayId, DayPlan> = {
   A: {
     id: 'A',
-    title: 'Day A',
+    title: 'Vertical + legs',
+    short: 'Legs',
     subtitle: 'Vertical jumps + heavy lower body',
     items: [
       {
@@ -84,13 +88,16 @@ export const DAYS: Record<DayId, DayPlan> = {
       { key: 'rdl', slot: 'hinge', section: 'main', exercise: fixed('db-rdl'), rx: (w) => deload({ sets: 3, reps: 8, note: '3 s lowering' }, w) },
       { key: 'calf', slot: 'ankle', section: 'main', exercise: fixed('sl-calf-raise'), rx: (w) => deload({ sets: 3, reps: 12, perSide: true }, w) },
       { key: 'abwheel', slot: 'core', section: 'main', exercise: fixed('ab-wheel'), rx: (w) => deload({ sets: 3, reps: [8, 10] }, w) },
+      { key: 'legext', slot: 'legs', section: 'accessory', exercise: fixed('leg-extension'), rx: (w) => deload({ sets: 2, reps: [12, 15], note: 'smooth, squeeze at the top' }, w) },
+      { key: 'curlA', slot: 'arms', section: 'accessory', exercise: fixed('ez-bar-curl'), rx: (w) => deload({ sets: 2, reps: [10, 12] }, w) },
       { key: 'close', slot: 'court', section: 'court', exercise: fixed('close-makes'), rx: () => ({ sets: 1, makes: 25, note: 'makes close in' }) },
       { key: 'ft', slot: 'court', section: 'court', exercise: fixed('free-throws'), rx: () => ({ sets: 1, makes: 20, note: 'log makes out of 20' }) },
     ],
   },
   B: {
     id: 'B',
-    title: 'Day B',
+    title: 'Upper body',
+    short: 'Upper',
     subtitle: 'Upper body (shoulder-safe) + upper power + prehab',
     banner: 'No barbell bench, dips, upright rows or behind-the-neck pressing for now.',
     items: [
@@ -102,12 +109,17 @@ export const DAYS: Record<DayId, DayPlan> = {
       { key: 'pushup', slot: 'horizontalPush', section: 'main', exercise: fixed('feet-elevated-pushup'), rx: (w) => deload({ sets: 3, reps: [12, 20] }, w) },
       { key: 'facepull', slot: 'upperBack', section: 'main', exercise: fixed('face-pull'), rx: (w) => deload({ sets: 3, reps: 15 }, w) },
       { key: 'carry', slot: 'carry', section: 'main', exercise: fixed('farmer-carry'), rx: (w) => deload({ sets: 3, meters: 40 }, w) },
+      { key: 'lateral', slot: 'shoulders', section: 'accessory', exercise: fixed('lateral-raise'), rx: (w) => deload({ sets: 3, reps: [12, 15], note: 'to shoulder height only' }, w) },
+      { key: 'fly', slot: 'chest', section: 'accessory', exercise: fixed('cable-fly'), rx: (w) => deload({ sets: 2, reps: [12, 15], note: "hands don't go behind the body" }, w) },
+      { key: 'curlB', slot: 'arms', section: 'accessory', exercise: fixed('hammer-curl'), rx: (w) => deload({ sets: 3, reps: [10, 12] }, w) },
+      { key: 'triB', slot: 'arms', section: 'accessory', exercise: fixed('triceps-pushdown'), rx: (w) => deload({ sets: 3, reps: [10, 12], note: 'superset with the curls to save time' }, w) },
       ...PREHAB_ITEMS,
     ],
   },
   C: {
     id: 'C',
-    title: 'Day C',
+    title: 'Lateral + conditioning',
+    short: 'Lateral',
     subtitle: 'Horizontal + lateral jumps, squat, conditioning, prehab',
     items: [
       { key: 'broad', slot: 'horizontalJump', section: 'main', exercise: fixed('broad-jump'), rx: (w) => noDeload({ sets: 4, reps: 3, note: 'stick the landing 2 s' }, w) },
@@ -117,6 +129,10 @@ export const DAYS: Record<DayId, DayPlan> = {
       { key: 'slrdl', slot: 'hinge', section: 'main', exercise: fixed('sl-rdl'), rx: (w) => deload({ sets: 3, reps: 8, perSide: true }, w) },
       { key: 'sarow', slot: 'horizontalPull', section: 'main', exercise: fixed('sa-db-row'), rx: (w) => deload({ sets: 3, reps: 10, perSide: true }, w) },
       { key: 'copen', slot: 'core', section: 'main', exercise: fixed('copenhagen-plank'), rx: (w) => deload({ sets: 3, seconds: 20, perSide: true }, w) },
+      { key: 'lateralC', slot: 'shoulders', section: 'accessory', exercise: fixed('cable-lateral-raise'), rx: (w) => deload({ sets: 2, reps: [12, 15], perSide: true }, w) },
+      { key: 'curlC', slot: 'arms', section: 'accessory', exercise: fixed('incline-db-curl'), rx: (w) => deload({ sets: 2, reps: [10, 12] }, w) },
+      { key: 'triC', slot: 'arms', section: 'accessory', exercise: fixed('db-lying-triceps-extension'), rx: (w) => deload({ sets: 2, reps: [10, 12] }, w) },
+      { key: 'calfC', slot: 'legs', section: 'accessory', exercise: fixed('standing-calf-raise'), rx: (w) => deload({ sets: 2, reps: [12, 15] }, w) },
       {
         key: 'intervals',
         slot: 'conditioning',
@@ -129,8 +145,9 @@ export const DAYS: Record<DayId, DayPlan> = {
   },
   D: {
     id: 'D',
-    title: 'Day D',
-    subtitle: 'Court, dunk work + conditioning',
+    title: 'Court day',
+    short: 'Court',
+    subtitle: 'Dunk work, shooting + court conditioning',
     optional: true,
     courtWarmup: true,
     items: [
@@ -196,7 +213,7 @@ export const CARDIO_TYPES: { id: CardioType; label: string; hint: string }[] = [
   { id: 'dog', label: 'Dog walk', hint: 'hilly or fast, 45–60 min' },
 ];
 
-/** Test days: weeks 1, 5, 9, 13 on Day D after the warm-up. */
+/** Test days: weeks 1, 5, 9, 13 on Court day after the warm-up. */
 export const TEST_PROTOCOL = [
   'Standing vertical: 3 tries from a flat-footed standing start, touch as high as you can. Best touch minus standing reach = your standing vertical.',
   'Approach touch: 3 tries with your full approach. Log the highest touch in inches.',

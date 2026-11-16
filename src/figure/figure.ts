@@ -1,19 +1,19 @@
 /* Exercise diagram renderer. Pure functions that turn a Diagram into an SVG
    string, so the app (React) and the preview script (Node) draw identical pictures.
    Coordinate model is documented in src/plan/types.ts. */
-import type { Anchor, BodyPoint, Diagram, MuscleId, Pose, Prop, XY } from '../plan/types';
+import type { Anchor, BodyPoint, Diagram, FrontPose, MuscleId, Pose, Prop, XY } from '../plan/types';
 
 export const SEG = { torso: 30, neck: 3.5, headR: 6, upper: 15, fore: 14, thigh: 23, shin: 22, foot: 7, heel: 1.6 };
 const LIMB = 5.2; // stroke width of limbs
 const HALF = LIMB / 2;
 
 export const COLORS = {
-  body: '#dfe4ee',
-  far: '#7d8597',
-  accent: '#ff7a1a',
-  prop: '#6f7a8e',
-  floor: '#3a4150',
-  label: '#9aa3b2',
+  body: '#ede7db',
+  far: '#7b746a',
+  accent: '#c9a96a',
+  prop: '#787064',
+  floor: '#3a362f',
+  label: '#a39b8e',
   bg: 'transparent',
 };
 
@@ -23,7 +23,72 @@ const dir = (a: number): P => ({ x: Math.sin(rad(a)), y: -Math.cos(rad(a)) });
 const add = (p: P, d: P, k: number): P => ({ x: p.x + d.x * k, y: p.y + d.y * k });
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-export type Body = Record<BodyPoint, P> & { headC: P; neck: P; angles: Required<Pick<Pose, 'torso' | 'head' | 'armN' | 'armF' | 'legN' | 'legF' | 'footN' | 'footF'>> };
+export type Body = Record<BodyPoint, P> & {
+  headC: P;
+  neck: P;
+  angles?: unknown;
+  /** front/back view only: the four corners of the torso */
+  front?: { shR: P; shL: P; hpR: P; hpL: P };
+};
+export type View3 = 'side' | 'front' | 'back' | undefined;
+const isFront = (v: View3) => v === 'front' || v === 'back';
+const FW = { shoulder: 10.5, hip: 6.5, foot: 5 };
+const dirL = (a: number): P => ({ x: -Math.sin(rad(a)), y: -Math.cos(rad(a)) });
+
+function fullFront(p: FrontPose) {
+  return {
+    lean: p.lean ?? 0,
+    head: p.head ?? p.lean ?? 0,
+    armR: p.armR,
+    armL: p.armL ?? p.armR,
+    legR: p.legR,
+    legL: p.legL ?? p.legR,
+    footR: p.footR ?? 90,
+    footL: p.footL ?? p.footR ?? 90,
+    lift: p.lift ?? 0,
+    contact: p.contact ?? 'lowest',
+    dx: p.dx ?? 0,
+  };
+}
+
+/** Front view: N = the limb drawn on the right of the picture, F = on the left. */
+function chainFront(p: ReturnType<typeof fullFront>): Body {
+  const hip = { x: 0, y: 0 };
+  const up = { x: Math.sin(rad(p.lean)), y: Math.cos(rad(p.lean)) };
+  const perp = { x: Math.cos(rad(p.lean)), y: -Math.sin(rad(p.lean)) };
+  const headUp = { x: Math.sin(rad(p.head)), y: Math.cos(rad(p.head)) };
+  const shoulder = add(hip, up, SEG.torso);
+  const neck = add(shoulder, headUp, SEG.neck);
+  const headC = add(shoulder, headUp, SEG.neck + SEG.headR);
+  const shR = add(shoulder, perp, FW.shoulder), shL = add(shoulder, perp, -FW.shoulder);
+  const hpR = add(hip, perp, FW.hip), hpL = add(hip, perp, -FW.hip);
+  const elbowN = add(shR, dir(p.armR[0]), SEG.upper);
+  const handN = add(elbowN, dir(p.armR[1]), SEG.fore);
+  const elbowF = add(shL, dirL(p.armL[0]), SEG.upper);
+  const handF = add(elbowF, dirL(p.armL[1]), SEG.fore);
+  const kneeN = add(hpR, dir(p.legR[0]), SEG.thigh);
+  const ankleN = add(kneeN, dir(p.legR[1]), SEG.shin);
+  const kneeF = add(hpL, dirL(p.legL[0]), SEG.thigh);
+  const ankleF = add(kneeF, dirL(p.legL[1]), SEG.shin);
+  const toeN = add(ankleN, dir(p.footR), FW.foot), heelN = add(ankleN, dir(p.footR), -1.2);
+  const toeF = add(ankleF, dirL(p.footL), FW.foot), heelF = add(ankleF, dirL(p.footL), -1.2);
+  return {
+    hip, shoulder, neck, headC, head: { x: headC.x, y: headC.y - SEG.headR },
+    elbowN, handN, elbowF, handF, kneeN, ankleN, kneeF, ankleF, toeN, toeF, heelN, heelF,
+    front: { shR, shL, hpR, hpL },
+  };
+}
+
+function lerpAny<T extends object>(a: T, b: T, t: number): T {
+  const out: Record<string, unknown> = {};
+  for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const x = (a as Record<string, unknown>)[k], y = (b as Record<string, unknown>)[k];
+    if (typeof x === 'number' && typeof y === 'number') out[k] = lerp(x, y, t);
+    else if (Array.isArray(x) && Array.isArray(y)) out[k] = x.map((v: number, i: number) => lerp(v, y[i] as number, t));
+    else out[k] = t < 0.5 ? x : y;
+  }
+  return out as T;
+}
 
 function full(p: Pose) {
   return {
@@ -74,9 +139,9 @@ function bottomOf(b: Body, k: BodyPoint | 'headBottom') {
 }
 
 /** Place a pose in the world: ground it and shift it horizontally. `originX` is where the hip goes before dx. */
-export function placePose(pose: Pose, originX = 0): Body {
-  const f = full(pose);
-  const b = chain(f);
+export function placePose(pose: Pose | FrontPose, originX = 0, view?: View3): Body {
+  const f = isFront(view) ? fullFront(pose as FrontPose) : full(pose as Pose);
+  const b = isFront(view) ? chainFront(f as ReturnType<typeof fullFront>) : chain(f as ReturnType<typeof full>);
   let low: number;
   if (f.contact === 'lowest') {
     low = Math.min(...POINT_KEYS.map((k) => bottomOf(b, k)), bottomOf(b, 'headBottom'));
@@ -88,12 +153,14 @@ export function placePose(pose: Pose, originX = 0): Body {
   const move = (p: P): P => ({ x: p.x + tx, y: p.y + ty });
   const out = { angles: b.angles } as Body;
   for (const k of [...POINT_KEYS, 'head', 'headC', 'neck'] as const) (out as Record<string, P>)[k] = move(b[k]);
+  if (b.front) out.front = { shR: move(b.front.shR), shL: move(b.front.shL), hpR: move(b.front.hpR), hpL: move(b.front.hpL) };
   return out;
 }
 
-export function lerpPose(a: Pose, b: Pose, t: number): Pose {
-  const A = full(a);
-  const B = full(b);
+export function lerpPose(a: Pose | FrontPose, b: Pose | FrontPose, t: number, view?: View3): Pose | FrontPose {
+  if (isFront(view)) return lerpAny(fullFront(a as FrontPose), fullFront(b as FrontPose), t) as FrontPose;
+  const A = full(a as Pose);
+  const B = full(b as Pose);
   const l2 = (x: [number, number], y: [number, number]): [number, number] => [lerp(x[0], y[0], t), lerp(x[1], y[1], t)];
   return {
     torso: lerp(A.torso, B.torso, t),
@@ -180,6 +247,7 @@ function anchorPoint(b: Body, at: Anchor): P {
     case 'hands': return { x: (b.handN.x + b.handF.x) / 2, y: (b.handN.y + b.handF.y) / 2 };
     case 'feet': return { x: (b.ankleN.x + b.ankleF.x) / 2, y: (b.ankleN.y + b.ankleF.y) / 2 };
     case 'chest': {
+      if (b.front) return { x: lerp(b.hip.x, b.shoulder.x, 0.78), y: lerp(b.hip.y, b.shoulder.y, 0.78) };
       const p = { x: lerp(b.hip.x, b.shoulder.x, 0.78), y: lerp(b.hip.y, b.shoulder.y, 0.78) };
       const n = frontNormal('torso', b.hip, b.shoulder);
       return add(p, n, 7);
@@ -193,7 +261,50 @@ function anchorPoint(b: Body, at: Anchor): P {
   }
 }
 
+/** Front/back view: both sides drawn full strength, torso as a solid trapezoid. */
+function drawFront(b: Body, muscles: MuscleId[], C = COLORS): string {
+  const f = b.front!;
+  const out: string[] = [];
+  const legs = [[f.hpR, b.kneeN, b.ankleN, b.heelN, b.toeN], [f.hpL, b.kneeF, b.ankleF, b.heelF, b.toeF]] as const;
+  // a thin dark outline under each limb so a leg or arm in front of the body still reads
+  const OUT = '#121110';
+  for (const [h, k, a, he, to] of legs) {
+    out.push(poly([h, k, a], OUT, LIMB + 2.2));
+    out.push(poly([h, k, a], C.body, LIMB));
+    out.push(line(he, to, C.body, LIMB * 0.8));
+  }
+  out.push(`<polygon points="${[f.shL, f.shR, f.hpR, f.hpL].map((p) => `${f1(p.x)},${f1(-p.y)}`).join(' ')}" fill="${C.body}" stroke="${C.body}" stroke-width="${LIMB * 0.9}" stroke-linejoin="round"/>`);
+  out.push(line(b.shoulder, b.neck, C.body, LIMB * 0.9));
+  out.push(circle(b.headC, SEG.headR, C.body));
+  for (const arm of [[f.shR, b.elbowN, b.handN], [f.shL, b.elbowF, b.handF]]) {
+    out.push(poly(arm, OUT, LIMB + 2.2));
+    out.push(poly(arm, C.body, LIMB));
+  }
+  const at = (a: P, c: P, t: number) => ({ x: lerp(a.x, c.x, t), y: lerp(a.y, c.y, t) });
+  const EDGE: MuscleId[] = ['lats', 'obliques', 'serratus', 'teresMajor'];
+  for (const m of muscles) {
+    for (const mk of MUSCLES[m]?.marks ?? []) {
+      if ('seg' in mk) {
+        const pairs: [P, P][] =
+          mk.seg === 'thigh' ? [[f.hpR, b.kneeN], [f.hpL, b.kneeF]]
+          : mk.seg === 'shin' ? [[b.kneeN, b.ankleN], [b.kneeF, b.ankleF]]
+          : mk.seg === 'upperArm' ? [[f.shR, b.elbowN], [f.shL, b.elbowF]]
+          : mk.seg === 'foreArm' ? [[b.elbowN, b.handN], [b.elbowF, b.handF]]
+          : EDGE.includes(m) ? [[f.hpR, f.shR], [f.hpL, f.shL]]
+          : [[b.hip, b.shoulder]];
+        const w = mk.seg === 'torso' && !EDGE.includes(m) ? 6 : 2.8;
+        for (const [a, c] of pairs) out.push(line(at(a, c, mk.from), at(a, c, mk.to), C.accent, w));
+      } else {
+        const pts = mk.dot === 'shoulder' ? [f.shR, f.shL] : mk.dot === 'hip' ? [f.hpR, f.hpL] : [b.neck];
+        for (const p of pts) out.push(circle(p, mk.r * 0.9, C.accent, ' fill-opacity="0.95"'));
+      }
+    }
+  }
+  return out.join('');
+}
+
 function drawBody(b: Body, muscles: MuscleId[], C = COLORS): string {
+  if (b.front) return drawFront(b, muscles, C);
   const out: string[] = [];
   // far limbs first
   out.push(poly([b.shoulder, b.elbowF, b.handF], C.far, LIMB));
@@ -355,7 +466,7 @@ function drawProp(pr: Prop, b: Body, C = COLORS, topY = 140): { back: string; fr
 /* ---------- bounds ---------- */
 type Box = { x0: number; x1: number; y0: number; y1: number }; // world, y0 = bottom
 function bodyBox(b: Body): Box {
-  const pts = [...POINT_KEYS.map((k) => b[k]), b.headC];
+  const pts = [...POINT_KEYS.map((k) => b[k]), b.headC, ...(b.front ? [b.front.shR, b.front.shL, b.front.hpR, b.front.hpL] : [])];
   const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
   return { x0: Math.min(...xs) - 7, x1: Math.max(...xs) + 7, y0: Math.min(...ys) - 4, y1: Math.max(...ys) + 7 };
 }
@@ -389,10 +500,10 @@ export type View = { x: number; y: number; w: number; h: number };
 
 /** One viewBox that fits both poses and all props, at a fixed aspect ratio, so both panels share a scale. */
 export function fitView(d: Diagram, aspect = 1.25): View {
-  const A = placePose(d.a);
-  const B = placePose(d.b);
+  const A = placePose(d.a, 0, d.view);
+  const B = placePose(d.b, 0, d.view);
   let box = union(bodyBox(A), bodyBox(B));
-  for (let i = 0; i <= 4; i++) box = union(box, bodyBox(placePose(lerpPose(d.a, d.b, i / 4))));
+  for (let i = 0; i <= 4; i++) box = union(box, bodyBox(placePose(lerpPose(d.a, d.b, i / 4, d.view), 0, d.view)));
   for (const pr of d.props ?? []) {
     const pa = propBox(pr, A), pb = propBox(pr, B);
     if (pa) box = union(box, pa);
@@ -427,8 +538,8 @@ export interface RenderOpts {
 export function renderFrame(d: Diagram, o: RenderOpts): string {
   const C = o.colors ?? COLORS;
   const view = o.view ?? fitView(d);
-  const pose = o.t <= 0 ? d.a : o.t >= 1 ? d.b : lerpPose(d.a, d.b, o.t);
-  const body = placePose(pose);
+  const pose = o.t <= 0 ? d.a : o.t >= 1 ? d.b : lerpPose(d.a, d.b, o.t, d.view);
+  const body = placePose(pose, 0, d.view);
   const which = o.t < 0.5 ? 'a' : 'b';
   const props = (d.props ?? []).filter((p) => !p.only || p.only === which);
   const top = -view.y;
@@ -446,8 +557,8 @@ export function renderFrame(d: Diagram, o: RenderOpts): string {
 }
 
 /** Contact report used by the preview script: how far each foot / hand is above the floor. */
-export function contactReport(p: Pose) {
-  const b = placePose(p);
+export function contactReport(p: Pose | FrontPose, view?: View3) {
+  const b = placePose(p, 0, view);
   const h = (k: BodyPoint) => Math.round((b[k].y - HALF) * 10) / 10;
   return { heelN: h('heelN'), toeN: h('toeN'), heelF: h('heelF'), toeF: h('toeF'), handN: h('handN'), handF: h('handF'), kneeN: h('kneeN'), kneeF: h('kneeF'), hip: h('hip'), shoulder: h('shoulder') };
 }

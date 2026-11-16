@@ -1,13 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#0b0d12"/>
-  <g transform="translate(256 262)">
-    <circle r="168" fill="#ff7a1a"/>
-    <g fill="none" stroke="#1a0d02" stroke-width="16" stroke-linecap="round">
-      <line x1="-168" y1="0" x2="168" y2="0"/>
-      <line x1="0" y1="-168" x2="0" y2="168"/>
-      <path d="M-118 -120 C -50 -60 -50 60 -118 120"/>
-      <path d="M118 -120 C 50 -60 50 60 118 120"/>
-    </g>
+  <rect width="512" height="512" rx="112" fill="#141312"/>
+  <g transform="translate(256 270)" fill="none" stroke="#c9a96a" stroke-width="14" stroke-linecap="round">
+    <circle r="150"/>
+    <line x1="-150" y1="0" x2="150" y2="0"/>
+    <line x1="0" y1="-150" x2="0" y2="150"/>
+    <path d="M-106 -106 C -46 -50 -46 50 -106 106"/>
+    <path d="M106 -106 C 46 -50 46 50 106 106"/>
   </g>
-  <path d="M120 96 C 200 40 312 40 392 96" fill="none" stroke="#e8ebf1" stroke-width="18" stroke-linecap="round" opacity="0.9"/>
+  <path d="M132 92 C 204 46 308 46 380 92" fill="none" stroke="#ede7db" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
 </svg>

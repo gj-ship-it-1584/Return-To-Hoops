@@ -3,14 +3,14 @@ import { useState, type ReactNode } from 'react';
 import { parseKey, fmtShort, keyOf } from '../lib/dates';
 
 export const CHART = {
-  accent: '#ff7a1a',
-  blue: '#5aa7ff',
-  green: '#34c77b',
-  yellow: '#f5c84c',
-  red: '#ff5a5a',
-  purple: '#b48cff',
-  grid: '#262c3b',
-  text: '#8a93a3',
+  accent: '#c9a96a',
+  blue: '#93abcf',
+  green: '#93c2a0',
+  yellow: '#e6cf98',
+  purple: '#b9a6d6',
+  red: '#e2705f',
+  grid: '#2a2723',
+  text: '#857d71',
 };
 
 export interface Pt {
