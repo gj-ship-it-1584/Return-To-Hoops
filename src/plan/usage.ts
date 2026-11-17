@@ -28,7 +28,7 @@ function build(): Record<string, DayTag[]> {
       for (let w = 1; w <= 13; w++) if (item.rx(w) !== null) add(item.exercise(w), day.id, w);
   const out: Record<string, DayTag[]> = {};
   for (const [ex, m] of map) {
-    out[ex] = (['A', 'B', 'C', 'D'] as DayId[]).filter((d) => m.has(d)).map((d) => ({ key: d, label: `${DAYS[d].title}${weeksText(m.get(d)!)}` }));
+    out[ex] = (['A', 'B', 'C', 'D', 'R'] as DayId[]).filter((d) => m.has(d)).map((d) => ({ key: d, label: `${DAYS[d].title}${weeksText(m.get(d)!)}` }));
   }
   for (const r of WARMUP) (out[r.exercise] ??= []).push({ key: 'warmup', label: 'Warm-up' });
   for (const r of COURT_WARMUP) (out[r.exercise] ??= []).push({ key: 'court-warmup', label: 'Court day warm-up' });

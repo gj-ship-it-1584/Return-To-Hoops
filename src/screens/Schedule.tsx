@@ -44,7 +44,7 @@ export default function Schedule() {
             {g.days.map((d) => {
               const done = sessions.some((s) => s.date === d.date && s.status === 'done' && s.type !== 'mobility');
               const isToday = d.date === today;
-              const strong = d.kind === 'lift' || d.kind === 'dayD';
+              const strong = d.kind === 'lift' || d.kind === 'dayD' || d.kind === 'rehab';
               return (
                 <button key={d.date} type="button" onClick={() => go(`day/${d.date}`)} className="flex min-h-[60px] w-full items-center gap-3 px-3 py-2 text-left active:bg-card2">
                   <span className={`flex w-11 shrink-0 flex-col items-center leading-tight ${isToday ? 'text-accent' : 'text-muted'}`}>

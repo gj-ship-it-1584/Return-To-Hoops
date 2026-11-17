@@ -38,11 +38,12 @@ export const KIND_LABEL: Record<string, string> = {
 };
 
 export function agendaTitle(a: AgendaDay) {
-  return a.kind === 'lift' && a.lift ? DAYS[a.lift].title : KIND_LABEL[a.kind];
+  return a.kind === 'lift' && a.lift ? DAYS[a.lift].title : a.kind === 'rehab' ? DAYS.R.title : KIND_LABEL[a.kind];
 }
 export function agendaSub(a: AgendaDay) {
   if (a.kind === 'lift' && a.lift) return DAYS[a.lift].subtitle;
   if (a.kind === 'dayD') return DAYS.D.subtitle;
+  if (a.kind === 'rehab') return DAYS.R.subtitle;
   if (a.kind === 'cardio') return 'Incline walk, bike, rower or a dog walk';
   if (a.kind === 'rest' || a.kind === 'mobility') return '5-minute desk reset, then walk the dog';
   return 'No hard lifting, jumps or sprints';
@@ -53,6 +54,7 @@ const TYPE_OPTIONS: { value: PlannedDay['type']; label: string; sub: string }[] 
   { value: 'B', label: DAYS.B.title, sub: DAYS.B.subtitle },
   { value: 'C', label: DAYS.C.title, sub: DAYS.C.subtitle },
   { value: 'D', label: DAYS.D.title, sub: DAYS.D.subtitle },
+  { value: 'R', label: DAYS.R.title, sub: DAYS.R.subtitle },
   { value: 'mobility', label: 'Mobility + walk', sub: 'Desk reset and the hip flexor routine' },
   { value: 'cardio', label: 'Easy cardio', sub: 'Optional, talking pace' },
   { value: 'rest', label: 'Rest day', sub: 'Nothing planned' },
@@ -74,7 +76,7 @@ export default function DayView({ date }: { date: string }) {
   const [sheet, setSheet] = useState<null | 'change' | 'add'>(null);
   const isPast = date < today;
   const isToday = date === today;
-  const mainType: SessionType | null = a.kind === 'lift' && a.lift ? a.lift : a.kind === 'dayD' ? 'D' : a.kind === 'rest' || a.kind === 'mobility' || a.kind === 'bloodDraw' ? 'mobility' : null;
+  const mainType: SessionType | null = a.kind === 'lift' && a.lift ? a.lift : a.kind === 'dayD' ? 'D' : a.kind === 'rehab' ? 'R' : a.kind === 'rest' || a.kind === 'mobility' || a.kind === 'bloodDraw' ? 'mobility' : null;
 
   const begin = async (type: SessionType) => {
     unlockAudio();
@@ -181,6 +183,7 @@ export default function DayView({ date }: { date: string }) {
           {a.kind !== 'bloodDraw' && <Button onClick={() => setSheet('change')}>Change</Button>}
         </div>
         {a.kind === 'lift' && a.lift && <PlannedList day={a.lift} week={a.pos.week} date={date} plan={plan} cycle={a.pos.cycle} cycleSwaps={cycleSwaps} />}
+        {a.kind === 'rehab' && <PlannedList day="R" week={a.pos.week} date={date} plan={plan} cycle={a.pos.cycle} cycleSwaps={cycleSwaps} />}
         {a.kind === 'dayD' && <PlannedList day="D" week={a.pos.week} date={date} plan={plan} cycle={a.pos.cycle} cycleSwaps={cycleSwaps} />}
         {(a.kind === 'rest' || a.kind === 'mobility' || a.kind === 'bloodDraw') && (
           <>

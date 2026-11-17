@@ -11,7 +11,7 @@ import { DAYS } from '../plan/days';
 
 export default function Library() {
   const [q, setQ] = useState('');
-  const [filter, setFilter] = useState<'all' | 'A' | 'B' | 'C' | 'D' | 'swap'>('all');
+  const [filter, setFilter] = useState<'all' | 'A' | 'B' | 'C' | 'D' | 'R' | 'swap'>('all');
   const needle = q.trim().toLowerCase();
   const swapDays = useCycleSwapDays();
   const match = (e: (typeof ALL_EXERCISES)[number]) =>
@@ -31,7 +31,7 @@ export default function Library() {
           className="hairline min-h-11 w-full rounded-full bg-card px-4 text-[15px] outline-none focus:border-accent/60"
         />
         <div className="no-scrollbar -mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4">
-          {(['all', 'A', 'B', 'C', 'D', 'swap'] as const).map((f) => (
+          {(['all', 'A', 'B', 'C', 'D', 'R', 'swap'] as const).map((f) => (
             <button key={f} type="button" onClick={() => setFilter(f)} className={`min-h-9 shrink-0 rounded-full px-3 text-[13px] ${filter === f ? 'bg-card2 text-accent ring-1 ring-accent/45' : 'hairline bg-card text-muted'}`}>
               {f === 'all' ? 'All' : f === 'swap' ? 'Swaps' : DAYS[f].short}
             </button>

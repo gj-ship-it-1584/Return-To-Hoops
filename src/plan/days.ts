@@ -3,7 +3,8 @@
    `rx(week)` returns the prescription for a week of the cycle (1–13), or null to skip the item that week. */
 import type { SlotId } from './types';
 
-export type DayId = 'A' | 'B' | 'C' | 'D';
+/** A–D are the training days; R is the optional Prehab + rehab session you can add to any day. */
+export type DayId = 'A' | 'B' | 'C' | 'D' | 'R';
 export type Section = 'main' | 'accessory' | 'added' | 'court' | 'conditioning' | 'prehab';
 
 export interface Rx {
@@ -42,6 +43,8 @@ export interface DayPlan {
   /** note shown at the top of the session */
   banner?: string;
   courtWarmup?: boolean;
+  /** just 5 easy minutes on the bike or rower instead of the full warm-up */
+  shortWarmup?: boolean;
   items: PlanItem[];
 }
 
@@ -165,6 +168,29 @@ export const DAYS: Record<DayId, DayPlan> = {
         rx: (w) => (w === 13 ? null : w >= 9 ? { sets: 3, seconds: 70, note: '17 sideline-to-sidelines in under 70 s; log times' } : { sets: 6, seconds: 30, note: w <= 3 ? 'at 80%; log times' : 'at 90%; log times' }),
       },
       { key: 'ftired', slot: 'court', section: 'court', exercise: fixed('free-throws'), rx: () => ({ sets: 1, makes: 10, note: 'when tired — makes out of 10' }) },
+    ],
+  },
+  /* Prehab + rehab: a light session for the problem areas, added to any day (never "missed"). */
+  R: {
+    id: 'R',
+    title: 'Prehab + rehab',
+    short: 'Rehab',
+    subtitle: 'Shoulder, hamstring, knees + Achilles, hips · ~25 min, all light',
+    optional: true,
+    shortWarmup: true,
+    banner: 'Easy effort throughout. Nothing above 3/10 pain; stop anything sharp or pinching.',
+    items: [
+      { key: 'r-hipflex', slot: 'hipMobility', section: 'main', exercise: fixed('hk-hip-flexor-stretch'), rx: () => ({ sets: 2, seconds: 45, perSide: true, note: 'squeeze the back glute' }) },
+      { key: 'r-couch', slot: 'hipMobility', section: 'main', exercise: fixed('couch-stretch'), rx: () => ({ sets: 1, seconds: 60, perSide: true }) },
+      { key: 'r-9090', slot: 'hipMobility', section: 'main', exercise: fixed('hip-9090'), rx: () => ({ sets: 2, reps: 8, perSide: true }) },
+      { key: 'r-pigeon', slot: 'hipMobility', section: 'main', exercise: fixed('pigeon-stretch'), rx: () => ({ sets: 1, seconds: 45, perSide: true }) },
+      { key: 'r-calf', slot: 'ankle', section: 'main', exercise: fixed('sl-calf-raise'), rx: () => ({ sets: 2, reps: 12, perSide: true, note: '3 s up, 3 s down; Achilles loading' }) },
+      { key: 'r-tib', slot: 'ankle', section: 'main', exercise: fixed('tibialis-raise'), rx: () => ({ sets: 2, reps: 15, note: 'knee-friendly shin work' }) },
+      { key: 'r-seatcalf', slot: 'ankle', section: 'main', exercise: fixed('seated-calf-raise'), rx: () => ({ sets: 2, reps: 15, note: 'pause at the bottom' }) },
+      { key: 'r-ham', slot: 'hamstring', section: 'main', exercise: fixed('slider-leg-curl'), rx: () => ({ sets: 2, reps: 8, note: 'slow on the way out; stop on any grab' }) },
+      { key: 'r-deadbug', slot: 'core', section: 'main', exercise: fixed('dead-bug'), rx: () => ({ sets: 2, reps: 8, perSide: true }) },
+      { key: 'r-sideplank', slot: 'core', section: 'main', exercise: fixed('side-plank'), rx: () => ({ sets: 2, seconds: 30, perSide: true }) },
+      ...PREHAB_ITEMS,
     ],
   },
 };

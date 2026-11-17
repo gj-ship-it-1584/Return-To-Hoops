@@ -78,7 +78,7 @@ export default function Workout({ id }: { id?: string }) {
   const day = isDay ? DAYS[session.type as DayId] : null;
   const week = session.week;
   const items = [...(day ? dayItems(day.id, week) : []), ...(session.added ?? []).map(toPlanItem)];
-  const warmup: RoutineItem[] = day?.courtWarmup ? [...WARMUP, ...COURT_WARMUP] : WARMUP;
+  const warmup: RoutineItem[] = day?.shortWarmup ? [{ exercise: 'easy-bike-row', dose: '5 min easy' }] : day?.courtWarmup ? [...WARMUP, ...COURT_WARMUP] : WARMUP;
   const warmDone = warmup.every((w) => session.ticked.includes(w.exercise));
   const hasJumps = items.some((i) => EXERCISES[i.exercise(week)]?.jump);
   const target = pos?.phase.jumpTarget ?? [0, 0];

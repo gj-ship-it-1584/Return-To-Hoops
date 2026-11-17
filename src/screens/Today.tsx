@@ -102,6 +102,16 @@ export default function Today() {
               {pos.week >= 9 && pos.week <= 12 && <Button className="mt-2 w-full" onClick={() => setSheet('pickup')}>Played pickup instead</Button>}
             </>
           )
+        ) : plan.kind === 'rehab' ? (
+          sessions.some((s) => s.date === today && s.type === 'R' && s.status === 'done') ? (
+            <DoneCard title={DAYS.R.title} duration={0} next={`Next lift: ${DAYS[plan.next].title}`} />
+          ) : (
+            <>
+              <div className="flex items-center gap-2"><span className="font-display text-[32px] leading-tight">{DAYS.R.title}</span><Pill>Optional</Pill></div>
+              <div className="text-muted">{DAYS.R.subtitle}</div>
+              <Button kind="primary" big className="mt-3 w-full" onClick={() => begin('R')}>Start workout</Button>
+            </>
+          )
         ) : plan.kind === 'cardio' ? (
           <>
             <div className="flex items-center gap-2"><span className="font-display text-[32px] leading-tight">Easy cardio</span><Pill>Optional</Pill></div>
@@ -280,6 +290,7 @@ function SessionPicker({ open, onClose, onPick, week }: { open: boolean; onClose
   const opts: { t: SessionType | 'cardio' | 'pickup'; title: string; sub: string; optional?: boolean }[] = [
     ...(['A', 'B', 'C'] as DayId[]).map((d) => ({ t: d, title: DAYS[d].title, sub: DAYS[d].subtitle })),
     { t: 'D', title: DAYS.D.title, sub: DAYS.D.subtitle, optional: true },
+    { t: 'R', title: DAYS.R.title, sub: DAYS.R.subtitle, optional: true },
     { t: 'mobility', title: 'Mobility + walk', sub: 'Desk reset and the hip flexor routine' },
     { t: 'cardio', title: 'Easy cardio', sub: 'Log an incline walk, bike, rower or dog walk', optional: true },
     ...(week >= 9 && week <= 12 ? [{ t: 'pickup' as const, title: 'Played pickup instead', sub: 'Log minutes and how you felt' }] : []),

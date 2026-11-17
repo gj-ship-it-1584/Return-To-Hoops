@@ -228,7 +228,7 @@ function AddPast({ onClose, startDate }: { onClose: () => void; startDate: strin
         <p className="text-sm text-muted">Forgot to log a session? Pick the day and the workout, then fill in the sets.</p>
         <Field label="Date"><input type="date" max={today} className="min-h-11 w-full rounded-xl bg-card2 px-3" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} /></Field>
         <Field label="Workout">
-          <Segmented options={[{ value: 'A', label: DAYS.A.short }, { value: 'B', label: DAYS.B.short }, { value: 'C', label: DAYS.C.short }, { value: 'D', label: DAYS.D.short }, { value: 'mobility', label: 'Mobility' }]} value={type} onChange={setType} />
+          <Segmented options={[{ value: 'A', label: DAYS.A.short }, { value: 'B', label: DAYS.B.short }, { value: 'C', label: DAYS.C.short }, { value: 'D', label: DAYS.D.short }, { value: 'R', label: DAYS.R.short }]} value={type} onChange={setType} />
         </Field>
         <Field label="Minutes"><NumInput value={mins} onChange={setMins} decimal={false} /></Field>
         <div className="flex flex-wrap gap-1.5">{type in DAYS && <Pill>{DAYS[type as DayId].subtitle}</Pill>}</div>

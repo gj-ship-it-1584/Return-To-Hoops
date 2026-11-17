@@ -62,7 +62,7 @@ export interface ScheduleSettings {
   bloodDraw?: string;
 }
 
-export type TodayKind = 'lift' | 'dayD' | 'cardio' | 'rest' | 'bloodDraw';
+export type TodayKind = 'lift' | 'dayD' | 'rehab' | 'cardio' | 'rest' | 'bloodDraw';
 
 export interface TodayPlan {
   kind: TodayKind;
@@ -119,6 +119,7 @@ export function planForDay(date: string, s: ScheduleSettings, sessions: SessionL
     const o = { ...base, overridden: true };
     if ((LIFT_ORDER as string[]).includes(plan.type)) return { ...o, kind: 'lift', lift: plan.type as DayId, calendarLift: plan.type as DayId };
     if (plan.type === 'D') return { ...o, kind: 'dayD', testDay: pos.started && pos.testWeek };
+    if (plan.type === 'R') return { ...o, kind: 'rehab' };
     if (plan.type === 'cardio') return { ...o, kind: 'cardio', cardioSuggested: true };
     return { ...o, kind: 'rest' };
   }
@@ -169,7 +170,7 @@ export function currentStreak(counts: number[], target = 3): number {
 }
 
 /* ---------- the agenda: what each upcoming day holds ---------- */
-export type AgendaKind = 'lift' | 'dayD' | 'cardio' | 'rest' | 'mobility' | 'bloodDraw' | 'pickup';
+export type AgendaKind = 'lift' | 'dayD' | 'rehab' | 'cardio' | 'rest' | 'mobility' | 'bloodDraw' | 'pickup';
 
 export interface AgendaDay {
   date: string;
@@ -208,6 +209,7 @@ export function projectAgenda(from: string, days: number, s: ScheduleSettings, s
       const t = plan.type;
       if ((LIFT_ORDER as string[]).includes(t)) day = { ...base, kind: 'lift', lift: t as DayId, overridden: true };
       else if (t === 'D') day = { ...base, kind: 'dayD', optional: true, overridden: true, testDay: pos.started && pos.testWeek };
+      else if (t === 'R') day = { ...base, kind: 'rehab', optional: true, overridden: true };
       else if (t === 'cardio') day = { ...base, kind: 'cardio', optional: true, overridden: true };
       else if (t === 'mobility') day = { ...base, kind: 'mobility', overridden: true };
       else day = { ...base, kind: 'rest', overridden: true };

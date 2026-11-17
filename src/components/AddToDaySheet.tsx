@@ -18,6 +18,7 @@ export type DayAddition =
   | { kind: 'exercise'; move: AddedMove; target: string };
 
 const WORKOUTS: { type: SessionType; label: string; sub: string }[] = [
+  { type: 'R', label: DAYS.R.title, sub: DAYS.R.subtitle },
   { type: 'A', label: DAYS.A.title, sub: DAYS.A.subtitle },
   { type: 'B', label: DAYS.B.title, sub: DAYS.B.subtitle },
   { type: 'C', label: DAYS.C.title, sub: DAYS.C.subtitle },
