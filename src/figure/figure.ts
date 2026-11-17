@@ -14,6 +14,8 @@ export const COLORS = {
   prop: '#787064',
   floor: '#3a362f',
   label: '#a39b8e',
+  /** the faint start-position figure behind the animation */
+  ghost: '#3a362f',
   bg: 'transparent',
 };
 
@@ -262,82 +264,172 @@ function anchorPoint(b: Body, at: Anchor): P {
 }
 
 /** Front/back view: both sides drawn full strength, torso as a solid trapezoid. */
-function drawFront(b: Body, muscles: MuscleId[], C = COLORS): string {
-  const f = b.front!;
+/* ---------- the figure: shaped limbs (tapered capsules), solid torso, depth, filled muscles ---------- */
+const RAD = {
+  thigh: [4.8, 3.4], shin: [3.3, 2.1], upper: [3.2, 2.6], fore: [2.5, 1.9], foot: [2.1, 1.6],
+  torso: [5.6, 6.2], neck: 2.4, head: 6.2, hand: 2.5,
+} as const;
+const BG = '#141312';
+
+/** A tapered limb: two circles joined by their tangent lines. */
+function capsule(a: P, c: P, r1: number, r2: number, fill: string, extra = ''): string {
+  const dx = c.x - a.x, dy = c.y - a.y;
+  const L = Math.hypot(dx, dy) || 1;
+  const nx = -dy / L, ny = dx / L;
+  const pts = [
+    { x: a.x + nx * r1, y: a.y + ny * r1 },
+    { x: c.x + nx * r2, y: c.y + ny * r2 },
+    { x: c.x - nx * r2, y: c.y - ny * r2 },
+    { x: a.x - nx * r1, y: a.y - ny * r1 },
+  ];
+  return `<g fill="${fill}"${extra}><polygon points="${pts.map((p) => `${f1(p.x)},${f1(-p.y)}`).join(' ')}"/><circle cx="${f1(a.x)}" cy="${f1(-a.y)}" r="${f1(r1)}"/><circle cx="${f1(c.x)}" cy="${f1(-c.y)}" r="${f1(r2)}"/></g>`;
+}
+const at = (a: P, c: P, t: number): P => ({ x: lerp(a.x, c.x, t), y: lerp(a.y, c.y, t) });
+
+type Shade = { near: string; far: string; eye: boolean; muscles: boolean };
+
+/** Gold fill over part of a limb, nudged toward the front or back of it. */
+function muscleOn(a: P, c: P, r1: number, r2: number, n: P, side: 'front' | 'back' | 'mid', from: number, to: number, C: typeof COLORS, torso = false): string {
+  const ra = lerp(r1, r2, from), rc = lerp(r1, r2, to);
+  const k = side === 'mid' ? 0 : (side === 'front' ? 1 : -1) * (torso ? 0.42 : 0.34);
+  const scale = side === 'mid' ? 0.8 : torso ? 0.62 : 0.7;
+  const p0 = add(at(a, c, from), n, ra * k), p1 = add(at(a, c, to), n, rc * k);
+  return capsule(p0, p1, ra * scale, rc * scale, C.accent, ' fill-opacity="0.95"');
+}
+
+function drawSide(b: Body, muscles: MuscleId[], C: typeof COLORS, sh: Shade): string {
   const out: string[] = [];
-  const legs = [[f.hpR, b.kneeN, b.ankleN, b.heelN, b.toeN], [f.hpL, b.kneeF, b.ankleF, b.heelF, b.toeF]] as const;
-  // a thin dark outline under each limb so a leg or arm in front of the body still reads
-  const OUT = '#121110';
-  for (const [h, k, a, he, to] of legs) {
-    out.push(poly([h, k, a], OUT, LIMB + 2.2));
-    out.push(poly([h, k, a], C.body, LIMB));
-    out.push(line(he, to, C.body, LIMB * 0.8));
+  // far side first, darker
+  out.push(capsule(b.hip, b.kneeF, RAD.thigh[0], RAD.thigh[1], sh.far));
+  out.push(capsule(b.kneeF, b.ankleF, RAD.shin[0], RAD.shin[1], sh.far));
+  out.push(capsule(b.heelF, b.toeF, RAD.foot[0], RAD.foot[1], sh.far));
+  out.push(capsule(b.shoulder, b.elbowF, RAD.upper[0], RAD.upper[1], sh.far));
+  out.push(capsule(b.elbowF, b.handF, RAD.fore[0], RAD.fore[1], sh.far));
+  out.push(circle(b.handF, RAD.hand, sh.far));
+  // torso, neck, head
+  out.push(capsule(b.hip, b.shoulder, RAD.torso[0], RAD.torso[1], sh.near));
+  out.push(capsule(b.shoulder, b.neck, RAD.neck, RAD.neck, sh.near));
+  out.push(circle(b.headC, RAD.head, sh.near));
+  if (sh.eye) {
+    // which way the figure is looking: a small eye toward the front of the head
+    const hd = { x: b.headC.x - b.shoulder.x, y: b.headC.y - b.shoulder.y };
+    const L = Math.hypot(hd.x, hd.y) || 1;
+    const u = { x: hd.x / L, y: hd.y / L };
+    const front = { x: u.y, y: -u.x };
+    out.push(circle(add(add(b.headC, u, 0.9), front, 3.7), 1.15, BG));
   }
-  out.push(`<polygon points="${[f.shL, f.shR, f.hpR, f.hpL].map((p) => `${f1(p.x)},${f1(-p.y)}`).join(' ')}" fill="${C.body}" stroke="${C.body}" stroke-width="${LIMB * 0.9}" stroke-linejoin="round"/>`);
-  out.push(line(b.shoulder, b.neck, C.body, LIMB * 0.9));
-  out.push(circle(b.headC, SEG.headR, C.body));
-  for (const arm of [[f.shR, b.elbowN, b.handN], [f.shL, b.elbowF, b.handF]]) {
-    out.push(poly(arm, OUT, LIMB + 2.2));
-    out.push(poly(arm, C.body, LIMB));
+  // near leg and arm, light
+  out.push(capsule(b.hip, b.kneeN, RAD.thigh[0], RAD.thigh[1], sh.near));
+  out.push(capsule(b.kneeN, b.ankleN, RAD.shin[0], RAD.shin[1], sh.near));
+  out.push(capsule(b.heelN, b.toeN, RAD.foot[0], RAD.foot[1], sh.near));
+  // muscles sit under the near arm so the arm still reads in front of the body
+  const mus: string[] = [];
+  if (sh.muscles) {
+    for (const m of muscles) {
+      for (const mk of MUSCLES[m]?.marks ?? []) {
+        if ('seg' in mk) {
+          if (mk.seg === 'upperArm' || mk.seg === 'foreArm') continue;
+          const [a, c] = segEnds(b, mk.seg);
+          const n = frontNormal(mk.seg, a, c);
+          const r = mk.seg === 'torso' ? RAD.torso : mk.seg === 'thigh' ? RAD.thigh : mk.seg === 'shin' ? RAD.shin : mk.seg === 'upperArm' ? RAD.upper : RAD.fore;
+          mus.push(muscleOn(a, c, r[0], r[1], n, mk.side, mk.from, mk.to, C, mk.seg === 'torso'));
+        } else if (mk.dot !== 'shoulder') {
+          const base = b[mk.dot === 'neck' ? 'neck' : mk.dot];
+          const n = frontNormal('torso', b.hip, b.shoulder);
+          const off = mk.side === 'front' ? 3 : mk.side === 'back' ? -3 : 0;
+          mus.push(circle(add(base, n, off), mk.r * 1.05, C.accent, ' fill-opacity="0.95"'));
+        }
+      }
+    }
   }
-  const at = (a: P, c: P, t: number) => ({ x: lerp(a.x, c.x, t), y: lerp(a.y, c.y, t) });
-  const EDGE: MuscleId[] = ['lats', 'obliques', 'serratus', 'teresMajor'];
-  for (const m of muscles) {
-    for (const mk of MUSCLES[m]?.marks ?? []) {
-      if ('seg' in mk) {
-        const pairs: [P, P][] =
-          mk.seg === 'thigh' ? [[f.hpR, b.kneeN], [f.hpL, b.kneeF]]
-          : mk.seg === 'shin' ? [[b.kneeN, b.ankleN], [b.kneeF, b.ankleF]]
-          : mk.seg === 'upperArm' ? [[f.shR, b.elbowN], [f.shL, b.elbowF]]
-          : mk.seg === 'foreArm' ? [[b.elbowN, b.handN], [b.elbowF, b.handF]]
-          : EDGE.includes(m) ? [[f.hpR, f.shR], [f.hpL, f.shL]]
-          : [[b.hip, b.shoulder]];
-        const w = mk.seg === 'torso' && !EDGE.includes(m) ? 6 : 2.8;
-        for (const [a, c] of pairs) out.push(line(at(a, c, mk.from), at(a, c, mk.to), C.accent, w));
-      } else {
-        const pts = mk.dot === 'shoulder' ? [f.shR, f.shL] : mk.dot === 'hip' ? [f.hpR, f.hpL] : [b.neck];
-        for (const p of pts) out.push(circle(p, mk.r * 0.9, C.accent, ' fill-opacity="0.95"'));
+  out.push(...mus);
+  out.push(capsule(b.shoulder, b.elbowN, RAD.upper[0], RAD.upper[1], sh.near));
+  out.push(capsule(b.elbowN, b.handN, RAD.fore[0], RAD.fore[1], sh.near));
+  out.push(circle(b.handN, RAD.hand, sh.near));
+  // arm muscles go on top of the arm
+  if (sh.muscles) {
+    for (const m of muscles) {
+      for (const mk of MUSCLES[m]?.marks ?? []) {
+        if ('seg' in mk && (mk.seg === 'upperArm' || mk.seg === 'foreArm')) {
+          const [a, c] = segEnds(b, mk.seg);
+          const r = mk.seg === 'upperArm' ? RAD.upper : RAD.fore;
+          out.push(muscleOn(a, c, r[0], r[1], frontNormal(mk.seg, a, c), mk.side, mk.from, mk.to, C));
+        } else if (!('seg' in mk) && mk.dot === 'shoulder') {
+          const n = frontNormal('torso', b.hip, b.shoulder);
+          const off = mk.side === 'front' ? 2.2 : mk.side === 'back' ? -2.2 : 0;
+          out.push(circle(add(b.shoulder, n, off), mk.r * 1.05, C.accent, ' fill-opacity="0.95"'));
+        }
       }
     }
   }
   return out.join('');
 }
 
-function drawBody(b: Body, muscles: MuscleId[], C = COLORS): string {
-  if (b.front) return drawFront(b, muscles, C);
+function drawFrontView(b: Body, muscles: MuscleId[], C: typeof COLORS, sh: Shade, back: boolean): string {
+  const f = b.front!;
   const out: string[] = [];
-  // far limbs first
-  out.push(poly([b.shoulder, b.elbowF, b.handF], C.far, LIMB));
-  out.push(poly([b.hip, b.kneeF, b.ankleF], C.far, LIMB));
-  out.push(line(b.heelF, b.toeF, C.far, LIMB * 0.8));
-  // torso + head
-  out.push(line(b.hip, b.shoulder, C.body, LIMB * 1.35));
-  out.push(line(b.shoulder, b.neck, C.body, LIMB * 0.9));
-  out.push(circle(b.headC, SEG.headR, C.body));
-  // near leg, near arm
-  out.push(poly([b.hip, b.kneeN, b.ankleN], C.body, LIMB));
-  out.push(line(b.heelN, b.toeN, C.body, LIMB * 0.8));
-  out.push(poly([b.shoulder, b.elbowN, b.handN], C.body, LIMB));
-  // muscles
-  for (const m of muscles) {
-    for (const mk of MUSCLES[m]?.marks ?? []) {
-      if ('seg' in mk) {
-        const [a, c] = segEnds(b, mk.seg);
-        const n = frontNormal(mk.seg, a, c);
-        const off = mk.side === 'front' ? 1.9 : mk.side === 'back' ? -1.9 : 0;
-        const w = mk.seg === 'torso' ? 3.4 : 2.6;
-        const p0 = add({ x: lerp(a.x, c.x, mk.from), y: lerp(a.y, c.y, mk.from) }, n, off * (mk.seg === 'torso' ? 1.35 : 1));
-        const p1 = add({ x: lerp(a.x, c.x, mk.to), y: lerp(a.y, c.y, mk.to) }, n, off * (mk.seg === 'torso' ? 1.35 : 1));
-        out.push(line(p0, p1, C.accent, w));
-      } else {
-        const base = b[mk.dot === 'neck' ? 'neck' : mk.dot];
-        const n = frontNormal('torso', b.hip, b.shoulder);
-        const off = mk.side === 'front' ? 2.8 : mk.side === 'back' ? -2.8 : 0;
-        out.push(circle(add(base, n, off), mk.r, C.accent, ' fill-opacity="0.95"'));
+  const legs = [[f.hpR, b.kneeN, b.ankleN, b.heelN, b.toeN], [f.hpL, b.kneeF, b.ankleF, b.heelF, b.toeF]] as const;
+  for (const [h, k, a, he, to] of legs) {
+    out.push(capsule(h, k, RAD.thigh[0] + 0.8, RAD.thigh[1] + 0.8, BG));
+    out.push(capsule(h, k, RAD.thigh[0], RAD.thigh[1], sh.near));
+    out.push(capsule(k, a, RAD.shin[0], RAD.shin[1], sh.near));
+    out.push(capsule(he, to, RAD.foot[0], RAD.foot[1], sh.near));
+  }
+  out.push(`<polygon points="${[f.shL, f.shR, f.hpR, f.hpL].map((p) => `${f1(p.x)},${f1(-p.y)}`).join(' ')}" fill="${sh.near}" stroke="${sh.near}" stroke-width="7" stroke-linejoin="round"/>`);
+  out.push(capsule(b.shoulder, b.neck, RAD.neck + 0.3, RAD.neck + 0.3, sh.near));
+  out.push(circle(b.headC, RAD.head + 0.2, sh.near));
+  if (sh.eye && !back) {
+    out.push(circle({ x: b.headC.x - 2.3, y: b.headC.y + 0.6 }, 1.05, BG));
+    out.push(circle({ x: b.headC.x + 2.3, y: b.headC.y + 0.6 }, 1.05, BG));
+  }
+  // torso and leg muscles under the arms
+  const EDGE: MuscleId[] = ['lats', 'obliques', 'serratus', 'teresMajor'];
+  const armMarks: string[] = [];
+  if (sh.muscles) {
+    for (const m of muscles) {
+      for (const mk of MUSCLES[m]?.marks ?? []) {
+        if ('seg' in mk) {
+          const pairs: [P, P, readonly [number, number]][] =
+            mk.seg === 'thigh' ? [[f.hpR, b.kneeN, RAD.thigh], [f.hpL, b.kneeF, RAD.thigh]]
+            : mk.seg === 'shin' ? [[b.kneeN, b.ankleN, RAD.shin], [b.kneeF, b.ankleF, RAD.shin]]
+            : mk.seg === 'upperArm' ? [[f.shR, b.elbowN, RAD.upper], [f.shL, b.elbowF, RAD.upper]]
+            : mk.seg === 'foreArm' ? [[b.elbowN, b.handN, RAD.fore], [b.elbowF, b.handF, RAD.fore]]
+            : EDGE.includes(m) ? [[f.hpR, f.shR, [2.6, 2.8]], [f.hpL, f.shL, [2.6, 2.8]]]
+            : [[b.hip, b.shoulder, [5.5, 6.5]]];
+          for (const [a, c, r] of pairs) {
+            const s = capsule(at(a, c, mk.from), at(a, c, mk.to), lerp(r[0], r[1], mk.from) * 0.72, lerp(r[0], r[1], mk.to) * 0.72, C.accent, ' fill-opacity="0.95"');
+            (mk.seg === 'upperArm' || mk.seg === 'foreArm' ? armMarks : out).push(s);
+          }
+        } else {
+          const pts = mk.dot === 'shoulder' ? [f.shR, f.shL] : mk.dot === 'hip' ? [f.hpR, f.hpL] : [b.neck];
+          for (const p of pts) (mk.dot === 'shoulder' ? armMarks : out).push(circle(p, mk.r, C.accent, ' fill-opacity="0.95"'));
+        }
       }
     }
   }
+  // arms last, with a dark outline so an arm across the body still reads
+  for (const [s, e, h] of [[f.shR, b.elbowN, b.handN], [f.shL, b.elbowF, b.handF]] as const) {
+    out.push(capsule(s, e, RAD.upper[0] + 0.8, RAD.upper[1] + 0.8, BG));
+    out.push(capsule(e, h, RAD.fore[0] + 0.8, RAD.fore[1] + 0.8, BG));
+    out.push(capsule(s, e, RAD.upper[0], RAD.upper[1], sh.near));
+    out.push(capsule(e, h, RAD.fore[0], RAD.fore[1], sh.near));
+    out.push(circle(h, RAD.hand, sh.near));
+  }
+  out.push(...armMarks);
   return out.join('');
+}
+
+function drawBody(b: Body, muscles: MuscleId[], C = COLORS, view?: View3, ghost = false): string {
+  const sh: Shade = ghost ? { near: C.ghost, far: C.ghost, eye: false, muscles: false } : { near: C.body, far: C.far, eye: true, muscles: true };
+  return b.front ? drawFrontView(b, muscles, C, sh, view === 'back') : drawSide(b, muscles, C, sh);
+}
+
+/** A soft contact shadow under whatever is touching the floor. */
+function shadow(b: Body): string {
+  const pts = [b.heelN, b.toeN, b.heelF, b.toeF, b.handN, b.handF, b.kneeN, b.kneeF, b.hip].filter((p) => p.y < 7);
+  if (!pts.length) return '';
+  const x0 = Math.min(...pts.map((p) => p.x)), x1 = Math.max(...pts.map((p) => p.x));
+  return `<ellipse cx="${f1((x0 + x1) / 2)}" cy="0.7" rx="${f1(Math.max(9, (x1 - x0) / 2 + 7))}" ry="1.9" fill="#000" fill-opacity="0.4"/>`;
 }
 
 function drawProp(pr: Prop, b: Body, C = COLORS, topY = 140): { back: string; front: string } {
@@ -533,6 +625,8 @@ export interface RenderOpts {
   colors?: typeof COLORS;
   /** drop the outer <svg> wrapper (for composing several panels) */
   inner?: boolean;
+  /** draw the start position faintly behind the current frame */
+  ghost?: boolean;
 }
 
 export function renderFrame(d: Diagram, o: RenderOpts): string {
@@ -545,10 +639,13 @@ export function renderFrame(d: Diagram, o: RenderOpts): string {
   const top = -view.y;
   const drawn = props.map((p) => drawProp(p, body, C, top));
   const floorY = 0;
+  const ghost = o.ghost && o.t > 0.02 ? `<g opacity="0.6">${drawBody(placePose(d.a, 0, d.view), [], C, d.view, true)}</g>` : '';
   const parts = [
     `<line x1="${f1(view.x)}" y1="${floorY + 0.8}" x2="${f1(view.x + view.w)}" y2="${floorY + 0.8}" stroke="${C.floor}" stroke-width="1.6"/>`,
+    shadow(body),
+    ghost,
     ...drawn.map((x) => x.back),
-    drawBody(body, o.muscles ?? [], C),
+    drawBody(body, o.muscles ?? [], C, d.view),
     ...drawn.map((x) => x.front),
   ].join('');
   if (o.inner) return parts;

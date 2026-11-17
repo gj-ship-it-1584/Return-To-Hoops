@@ -27,7 +27,7 @@ const cellH = PH + LABEL + 8;
 const rows = Math.ceil(list.length / COLS);
 const W = cellW * COLS + 20, H = rows * cellH + 20;
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-let body = `<rect width="${W}" height="${H}" fill="#0b0d12"/>`;
+let body = `<rect width="${W}" height="${H}" fill="#121110"/>`;
 list.forEach((e, i) => {
   const cx = 10 + (i % COLS) * cellW;
   const cy = 10 + Math.floor(i / COLS) * cellH;
@@ -36,7 +36,7 @@ list.forEach((e, i) => {
   [0, 0.5, 1].forEach((t, k) => {
     const inner = renderFrame(e.diagram, { t, view, inner: true, muscles: e.muscles });
     const x = cx + k * (PW + 4), y = cy + LABEL;
-    body += `<rect x="${x}" y="${y}" width="${PW}" height="${PH}" fill="#141821" rx="6"/>`;
+    body += `<rect x="${x}" y="${y}" width="${PW}" height="${PH}" fill="#1a1917" rx="6"/>`;
     body += `<svg x="${x}" y="${y}" width="${PW}" height="${PH}" viewBox="${view.x} ${view.y} ${view.w} ${view.h}" preserveAspectRatio="xMidYMax meet">${inner}</svg>`;
   });
   const ra = contactReport(e.diagram.a, e.diagram.view), rb = contactReport(e.diagram.b, e.diagram.view);
