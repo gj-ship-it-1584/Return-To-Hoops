@@ -91,7 +91,6 @@ export function AnimatedFigure({ ex, compact = false }: { ex: Exercise; compact?
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 5l12 7-12 7z" /></svg>
           )}
         </button>
-        <span className="text-[10px] uppercase tracking-[0.12em] text-faint">{labels[0]}</span>
         <input
           ref={scrub}
           type="range"
@@ -109,7 +108,6 @@ export function AnimatedFigure({ ex, compact = false }: { ex: Exercise; compact?
             draw(t);
           }}
         />
-        <span className="text-[10px] uppercase tracking-[0.12em] text-faint">{labels[1]}</span>
         {!compact && (
           <button
             type="button"
@@ -120,6 +118,10 @@ export function AnimatedFigure({ ex, compact = false }: { ex: Exercise; compact?
             {speed}×
           </button>
         )}
+      </div>
+      <div className={`-mt-1 flex justify-between gap-3 pl-12 ${compact ? "pr-1" : "pr-14"} text-[10px] uppercase tracking-[0.12em] text-faint`}>
+        <span className="leading-tight">{labels[0]}</span>
+        <span className="text-right leading-tight">{labels[1]}</span>
       </div>
     </div>
   );

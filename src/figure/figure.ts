@@ -9,9 +9,10 @@ const HALF = LIMB / 2;
 
 export const COLORS = {
   body: '#ede7db',
-  far: '#7b746a',
+  far: '#8a8378',
   accent: '#c9a96a',
-  prop: '#787064',
+  /** equipment: a cool steel grey, so it never reads as part of the (warm) body */
+  prop: '#5c6470',
   floor: '#3a362f',
   label: '#a39b8e',
   /** the faint start-position figure behind the animation */
@@ -286,7 +287,7 @@ function capsule(a: P, c: P, r1: number, r2: number, fill: string, extra = ''): 
 }
 const at = (a: P, c: P, t: number): P => ({ x: lerp(a.x, c.x, t), y: lerp(a.y, c.y, t) });
 
-type Shade = { near: string; far: string; eye: boolean; muscles: boolean };
+type Shade = { near: string; far: string; eye: boolean; muscles: boolean; ghostly?: boolean };
 
 /** Gold fill over part of a limb, nudged toward the front or back of it. */
 function muscleOn(a: P, c: P, r1: number, r2: number, n: P, side: 'front' | 'back' | 'mid', from: number, to: number, C: typeof COLORS, torso = false): string {
@@ -299,7 +300,16 @@ function muscleOn(a: P, c: P, r1: number, r2: number, n: P, side: 'front' | 'bac
 
 function drawSide(b: Body, muscles: MuscleId[], C: typeof COLORS, sh: Shade): string {
   const out: string[] = [];
-  // far side first, darker
+  // far side first, darker, with a dark rim so it stays readable against a wall, bench or the near limbs
+  if (!sh.ghostly) {
+    const o = 0.9;
+    out.push(capsule(b.hip, b.kneeF, RAD.thigh[0] + o, RAD.thigh[1] + o, BG));
+    out.push(capsule(b.kneeF, b.ankleF, RAD.shin[0] + o, RAD.shin[1] + o, BG));
+    out.push(capsule(b.heelF, b.toeF, RAD.foot[0] + o, RAD.foot[1] + o, BG));
+    out.push(capsule(b.shoulder, b.elbowF, RAD.upper[0] + o, RAD.upper[1] + o, BG));
+    out.push(capsule(b.elbowF, b.handF, RAD.fore[0] + o, RAD.fore[1] + o, BG));
+    out.push(circle(b.handF, RAD.hand + o, BG));
+  }
   out.push(capsule(b.hip, b.kneeF, RAD.thigh[0], RAD.thigh[1], sh.far));
   out.push(capsule(b.kneeF, b.ankleF, RAD.shin[0], RAD.shin[1], sh.far));
   out.push(capsule(b.heelF, b.toeF, RAD.foot[0], RAD.foot[1], sh.far));
@@ -369,15 +379,21 @@ function drawFrontView(b: Body, muscles: MuscleId[], C: typeof COLORS, sh: Shade
   const f = b.front!;
   const out: string[] = [];
   const legs = [[f.hpR, b.kneeN, b.ankleN, b.heelN, b.toeN], [f.hpL, b.kneeF, b.ankleF, b.heelF, b.toeF]] as const;
+  // a knee raised above the hip (sitting with knees up) is in front of the body, so draw that leg after the torso
+  const raised: string[] = [];
   for (const [h, k, a, he, to] of legs) {
-    out.push(capsule(h, k, RAD.thigh[0] + 0.8, RAD.thigh[1] + 0.8, BG));
-    out.push(capsule(h, k, RAD.thigh[0], RAD.thigh[1], sh.near));
-    out.push(capsule(k, a, RAD.shin[0], RAD.shin[1], sh.near));
-    out.push(capsule(he, to, RAD.foot[0], RAD.foot[1], sh.near));
+    const up = k.y > h.y + 8;
+    const dst = up ? raised : out;
+    dst.push(capsule(h, k, RAD.thigh[0] + 0.8, RAD.thigh[1] + 0.8, BG));
+    if (up) dst.push(capsule(k, a, RAD.shin[0] + 0.8, RAD.shin[1] + 0.8, BG));
+    dst.push(capsule(h, k, RAD.thigh[0], RAD.thigh[1], sh.near));
+    dst.push(capsule(k, a, RAD.shin[0], RAD.shin[1], sh.near));
+    dst.push(capsule(he, to, RAD.foot[0], RAD.foot[1], sh.near));
   }
   out.push(`<polygon points="${[f.shL, f.shR, f.hpR, f.hpL].map((p) => `${f1(p.x)},${f1(-p.y)}`).join(' ')}" fill="${sh.near}" stroke="${sh.near}" stroke-width="7" stroke-linejoin="round"/>`);
   out.push(capsule(b.shoulder, b.neck, RAD.neck + 0.3, RAD.neck + 0.3, sh.near));
   out.push(circle(b.headC, RAD.head + 0.2, sh.near));
+  out.push(...raised);
   if (sh.eye && !back) {
     out.push(circle({ x: b.headC.x - 2.3, y: b.headC.y + 0.6 }, 1.05, BG));
     out.push(circle({ x: b.headC.x + 2.3, y: b.headC.y + 0.6 }, 1.05, BG));
@@ -420,7 +436,7 @@ function drawFrontView(b: Body, muscles: MuscleId[], C: typeof COLORS, sh: Shade
 }
 
 function drawBody(b: Body, muscles: MuscleId[], C = COLORS, view?: View3, ghost = false): string {
-  const sh: Shade = ghost ? { near: C.ghost, far: C.ghost, eye: false, muscles: false } : { near: C.body, far: C.far, eye: true, muscles: true };
+  const sh: Shade = ghost ? { near: C.ghost, far: C.ghost, eye: false, muscles: false, ghostly: true } : { near: C.body, far: C.far, eye: true, muscles: true };
   return b.front ? drawFrontView(b, muscles, C, sh, view === 'back') : drawSide(b, muscles, C, sh);
 }
 
@@ -639,7 +655,7 @@ export function renderFrame(d: Diagram, o: RenderOpts): string {
   const top = -view.y;
   const drawn = props.map((p) => drawProp(p, body, C, top));
   const floorY = 0;
-  const ghost = o.ghost && o.t > 0.02 ? `<g opacity="0.6">${drawBody(placePose(d.a, 0, d.view), [], C, d.view, true)}</g>` : '';
+  const ghost = o.ghost && o.t > 0.02 ? `<g opacity="0.42">${drawBody(placePose(d.a, 0, d.view), [], C, d.view, true)}</g>` : '';
   const parts = [
     `<line x1="${f1(view.x)}" y1="${floorY + 0.8}" x2="${f1(view.x + view.w)}" y2="${floorY + 0.8}" stroke="${C.floor}" stroke-width="1.6"/>`,
     shadow(body),

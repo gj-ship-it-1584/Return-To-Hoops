@@ -9,6 +9,7 @@ import { SwapSheet } from './SwapSheet';
 import { IntervalTimer } from './IntervalTimer';
 import { DunkLogger } from './Extras';
 import { startRest } from './RestTimer';
+import { SetTimer } from './SetTimer';
 import { formatSet } from './ExerciseCard';
 import { EXERCISES } from '../../plan/exercises';
 import type { PlanItem, Rx } from '../../plan/days';
@@ -20,6 +21,8 @@ import { deloadWeight, progressionHint } from '../../lib/progression';
 import { fromDisplay, toDisplay } from '../../lib/units';
 import { fmtShort } from '../../lib/dates';
 
+/** runs that log how long they took, so they get a stopwatch rather than a countdown */
+const FOR_TIME = new Set(['suicides', 'seventeens']);
 const SPOTS = ['Left corner', 'Left wing', 'Top', 'Right wing', 'Right corner'];
 type Vals = Partial<Record<LogField, number>>;
 
@@ -223,14 +226,17 @@ export function ExerciseNode(p: NodeProps & { open: boolean; onOpen: () => void;
   if (!p.open) return <div ref={ref} className="scroll-mt-28"><Line title={ex.name} tag={tag} right={m.summary} state={state} onClick={p.onOpen} /></div>;
 
   const special = m.id === 'dunk-attempt' ? 'dunk' : ['bike-intervals', 'rower-intervals', 'jump-rope-intervals'].includes(m.id) ? 'intervals' : null;
+  const timed = m.fields.includes('seconds') ? 'seconds' : m.fields.includes('minutes') ? 'minutes' : null;
   const selDone = !!m.mine.find((s) => s.idx === sel)?.done;
   const hint = m.last && !p.review ? progressionHint(ex, m.rx, m.last.sets) : null;
   const persist = (v: Vals) => {
     setVals(v);
     void m.write(sel, v, selDone);
   };
-  const doneSet = async () => {
-    await m.write(sel, vals, true);
+  const doneSet = async (override?: Vals) => {
+    const v = override ? { ...vals, ...override } : vals;
+    if (override) setVals(v);
+    await m.write(sel, v, true);
     if (!p.review) startRest(m.restSecs, ex.name);
     const next = Array.from({ length: m.total }, (_, i) => i).find((i) => i !== sel && !m.mine.find((s) => s.idx === i)?.done);
     if (next === undefined && m.doneCount + 1 >= m.rx.sets) p.onComplete();
@@ -273,7 +279,7 @@ export function ExerciseNode(p: NodeProps & { open: boolean; onOpen: () => void;
           <div className="flex gap-2">
             <Stepper field="rounds" value={vals.rounds} onChange={(v) => persist({ ...vals, rounds: v })} units={p.settings.units} />
           </div>
-          <button type="button" onClick={doneSet} className="min-h-12 w-full rounded-full bg-accent font-medium text-accent-ink active:brightness-90">{selDone ? 'Update rounds' : 'Log rounds'}</button>
+          <button type="button" onClick={() => void doneSet()} className="min-h-12 w-full rounded-full bg-accent font-medium text-accent-ink active:brightness-90">{selDone ? 'Update rounds' : 'Log rounds'}</button>
         </div>
       ) : (
         <>
@@ -304,8 +310,21 @@ export function ExerciseNode(p: NodeProps & { open: boolean; onOpen: () => void;
               ))}
             </div>
           )}
+          {timed && !p.review && (
+            <div className="mt-2.5">
+              <SetTimer
+                key={`${m.id}:${sel}`}
+                seconds={timed === 'minutes' ? (vals.minutes ?? 0) * 60 : vals.seconds}
+                perSide={!!m.rx.perSide}
+                up={FOR_TIME.has(m.id)}
+                sound={p.settings.sound}
+                vibrate={p.settings.vibrate}
+                onFinish={(ran) => void doneSet(ran !== undefined ? { seconds: ran } : undefined)}
+              />
+            </div>
+          )}
           <div className="mt-3 flex gap-2">
-            <button type="button" onClick={doneSet} className="min-h-12 flex-1 rounded-full bg-accent text-[15px] font-medium text-accent-ink active:brightness-90">
+            <button type="button" onClick={() => void doneSet()} className="min-h-12 flex-1 rounded-full bg-accent text-[15px] font-medium text-accent-ink active:brightness-90">
               {selDone ? `Update set ${sel + 1}` : m.fields.length ? `Done · set ${sel + 1} of ${Math.max(m.rx.sets, sel + 1)}` : 'Done'}
             </button>
             {selDone && (

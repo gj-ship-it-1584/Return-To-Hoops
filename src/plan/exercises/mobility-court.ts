@@ -26,6 +26,8 @@ const sledA: Pose = { torso: 112, head: 105, armN: [60, 60], armF: [58, 58], leg
 const sledB: Pose = { ...sledA, legN: [-30, -55], legF: [72, -10], footN: 20, footF: 80, dx: 18 };
 
 /** half-kneeling stretch, hips shifted forward */
+/** Put the back (stretched) leg nearest the viewer, so it is the one drawn light with the gold muscles. */
+const backLegNear = (p: Pose): Pose => ({ ...p, legN: p.legF ?? p.legN, legF: p.legN, footN: p.footF ?? p.footN ?? 90, footF: p.footN ?? 90 });
 const hkForward: Pose = { torso: 180, armN: [4, 4], armF: [-4, -4], legN: [80, -15], legF: [-30, -95], footF: -10 };
 
 /** deep lunge, both hands on the floor inside the front foot */
@@ -288,8 +290,8 @@ export const exercises: Exercise[] = [
     easier: 'Smaller forward shift with the pelvis tucked.',
     harder: 'Reach the back-side arm overhead and lean slightly away.',
     diagram: {
-      a: { ...P.halfKneel },
-      b: { ...hkForward, armF: [175, 178] },
+      a: backLegNear(P.halfKneel),
+      b: backLegNear({ ...hkForward, armF: [175, 178] }),
       labels: ['Set up', 'Squeeze and shift'],
     },
   },
@@ -313,9 +315,9 @@ export const exercises: Exercise[] = [
     easier: 'Stay leaning forward with hands on a box, or move the knee a bit away from the wall.',
     harder: 'Sit fully upright with the glute squeezed.',
     diagram: {
-      a: { torso: 150, head: 160, armN: [-10, 40], armF: [-12, 38], legN: [88, 0], legF: [-15, 178], footF: 180 },
-      b: { torso: 180, armN: [4, 4], armF: [-4, -4], legN: [88, 0], legF: [-15, 178], footF: 180 },
-      props: [{ t: 'wall', x: -10 }],
+      a: { torso: 150, head: 160, armN: [-10, 40], armF: [-12, 38], legN: [-30, 180], legF: [97, 0], footN: 180, footF: 90 },
+      b: { torso: 182, armN: [4, 4], armF: [-4, -4], legN: [-30, 180], legF: [97, 0], footN: 180, footF: 90 },
+      props: [{ t: 'wall', x: -16.5 }],
       labels: ['Lean forward', 'Sit up tall'],
     },
   },
@@ -339,8 +341,9 @@ export const exercises: Exercise[] = [
     easier: 'Keep your hands on the floor behind you the whole time.',
     harder: 'Hands off the floor, or lean forward over the front shin at each side.',
     diagram: {
-      a: { torso: 172, armN: [-30, -25], armF: [-32, -27], legN: [93, -80], legF: [267, 80], footN: -80, footF: 80 },
-      b: { torso: 172, armN: [-30, -25], armF: [-32, -27], legN: [267, 80], legF: [93, -80], footN: 80, footF: -80 },
+      view: 'front',
+      a: { lean: -4, armR: [30, 30], armL: [30, 30], legR: [175, 0], legL: [125, 53], contact: 'hip' },
+      b: { lean: 4, armR: [30, 30], armL: [30, 30], legR: [125, 53], legL: [175, 0], contact: 'hip' },
       labels: ['Knees to one side', 'Knees to the other'],
     },
   },
@@ -365,8 +368,8 @@ export const exercises: Exercise[] = [
     easier: 'Figure-4 stretch lying on your back.',
     harder: 'Lower the chest all the way down and reach the arms long.',
     diagram: {
-      a: { torso: 165, armN: [5, 5], armF: [3, 3], legN: [92, -75], legF: [-92, -92], footN: -90, footF: -100 },
-      b: { torso: 100, head: 108, armN: [80, 90], armF: [78, 88], legN: [92, -75], legF: [-92, -92], footN: -90, footF: -100 },
+      a: { torso: 176, armN: [8, 8], armF: [6, 6], legN: [92, -75], legF: [-92, -92], footN: -90, footF: -100 },
+      b: { torso: 115, head: 118, armN: [32, 90], armF: [30, 88], legN: [92, -75], legF: [-92, -92], footN: -90, footF: -100 },
       labels: ['Sit tall', 'Fold forward'],
     },
   },
@@ -439,8 +442,8 @@ export const exercises: Exercise[] = [
     easier: 'Lighter band or less forward shift.',
     harder: 'Reach the same-side arm overhead.',
     diagram: {
-      a: { ...P.halfKneel },
-      b: { ...hkForward },
+      a: backLegNear(P.halfKneel),
+      b: backLegNear(hkForward),
       props: [{ t: 'band', from: [-58, 47], to: 'hip' }],
     },
   },
